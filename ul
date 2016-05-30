@@ -21,7 +21,8 @@ if [ "$1" == "--help" ]; then
 \tul deleteConf <conf>
 \tul createDefaultConf
 \tul doesConfExist
-\tul listLocalConfs"
+\tul listLocalConfs
+\tul cpConf"
 
 fi
 
@@ -116,4 +117,11 @@ fi
 if [ "$1" == "listLocalConfs" ]; then
 	loadedConf=$(. $0 getProperty loadedConf)
 	ls $(. $0 getConfsDir) | sed "s/$loadedConf/<$loadedConf>/g"
+fi
+
+if [ "$1" == "cpConf" ]; then
+	frompath=$(. $0 getConfDir $2)
+	[ ! -d $frompath ] && error "conf $2 not found"
+	topath=$(. $0 getConfDir $3)
+	cp -r $frompath $topath
 fi
