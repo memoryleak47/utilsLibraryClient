@@ -18,8 +18,10 @@ if [ "$1" == "--help" ]; then
 \tul loadConf <confpath>
 \tul getConfInit <conf>
 \tul createConf <conf>
+\tul deleteConf <conf>
 \tul createDefaultConf
-\tul doesConfExist"
+\tul doesConfExist
+\tul listLocalConfs"
 
 fi
 
@@ -84,7 +86,14 @@ fi
 if [ "$1" == "createConf" ]; then
 	if [ ! "$(. $0 doesConfExist $2)" == "true" ]; then
 		confdir="$(. $0 getConfDir $2)"
-		mkdir "$confdir" "$confdir/bin" "$confdir/res"
+		mkdir "$confdir"
+	fi
+fi
+
+if [ "$1" == "deleteConf" ]; then
+	if [ "$(. $0 doesConfExist $2)" == "true" ]; then
+		confdir="$(. $0 getConfDir $2)"
+		rm -r "$confdir"
 	fi
 fi
 
@@ -98,4 +107,8 @@ if [ "$1" == "doesConfExist" ]; then
 	else
 		echo false
 	fi
+fi
+
+if [ "$1" == "listLocalConfs" ]; then
+	ls $(. $0 getConfsDir)
 fi
