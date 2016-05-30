@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. $(dirname $(readlink -f $0))/funcs.sh
+[ $(eval sudo cp $(dirname $(readlink -f $0))/ul /usr/bin/) ] && exit 1
 
 # whereToInstall?
 echo "Where do you want to install the ulClient? Default: ~/.ul"
@@ -11,13 +11,13 @@ fi
 eval "echo $whereToInstall > $HOME/.ulroot"
 
 # create UlRoot
-if [ ! -d $(getUlRoot -q) ]; then
-	mkdir $(getUlRoot -q)
+if [ ! -d $(ul getUlRoot -q) ]; then
+	mkdir $(ul getUlRoot -q)
 fi
 
 # create properties
-if [ ! -f $(getPropertiesFile -q) ]; then
-	touch $(getPropertiesFile -q)
+if [ ! -f $(ul getPropertiesFile -q) ]; then
+	touch $(ul getPropertiesFile -q)
 fi
 
 # linked?
@@ -26,7 +26,7 @@ read linked
 if [ -z $linked ]; then
 	linked="yes"
 fi
-setProperty linked $linked
+ul setProperty linked $linked
 
 # link
 # TODO

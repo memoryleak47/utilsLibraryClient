@@ -1,0 +1,65 @@
+#!/bin/bash
+
+function error()
+{
+	echo $* 1>&2
+	exit 1
+}
+
+function getUlRoot()
+{
+	[ ! "$1" == "-q" ] && [ ! -f "$HOME"/.ulroot ] && error "ulroot unset"
+	x=$(cat "$HOME"/.ulroot)
+	[ ! "$1" == "-q" ] && [ ! -d $x ] && error "ulroot directory not found"
+	echo $x
+}
+
+if [ "$1" == "getUlRoot" ]; then
+	shift
+	getUlRoot $*
+	exit
+fi
+
+function getPropertiesFile()
+{
+	propsfile=$(getUlRoot)/properties
+	[ "$?" == 1 ] && exit 1
+	[ ! "$1" == "-q" ] && [ ! -f "$propsfile" ] && error "propsfile not found unset" && exit 1
+	echo "$propsfile"
+}
+
+if [ "$1" == "getPropertiesFile" ]; then
+	shift
+	getPropertiesFile $*
+	exit
+fi
+
+function setProperty() # property, value
+{
+	propsfile=$(getPropertiesFile)
+	[ $? == 1 ] && exit 1
+	if [ ! $(sed "s/$1=*/$1=$2/g" -i $propsfile) ]; then
+		echo "$1=$2" >> $propsfile
+	fi
+}
+
+if [ "$1" == "setProperty" ]; then
+	shift
+	setProperty $*
+	exit
+fi
+
+function getProperty() # property
+{
+	propsfile=$(getPropertiesFile)
+	[ $? == 1 ] && exit 1
+	grep "$1=" $propsfile | sed 's/$1=//g'
+}
+
+if [ "$1" == "getProperty" ]; then
+	shift
+	getProperty $*
+	exit
+fi
+
+echo -e "Usage=\tul getUlRoot\n\tul getPropertiesFile\n\tul setProperty <property> <value>\n\tul getProperty <property>"
