@@ -12,6 +12,7 @@ if [ "$1" == "--help" ]; then
 \tul setProperty <property> <value>
 \tul getProperty <property>
 \tul getProperties
+\tul getServersDir
 \tul getConfsDir
 \tul getConfDir <conf>
 \tul getLoadedConfPath
@@ -22,7 +23,10 @@ if [ "$1" == "--help" ]; then
 \tul createDefaultConf
 \tul doesConfExist
 \tul listLocalConfs
-\tul cpConf"
+\tul cpConf
+\tul addServer
+\tul deleteServer
+\tul listServers"
 
 fi
 
@@ -53,6 +57,10 @@ fi
 
 if [ "$1" == "getProperties" ]; then
 	cat $(. $0 getPropertiesFile)
+fi
+
+if [ "$1" == "getServersDir" ]; then
+	echo "$(. $0 getUlRoot)/servers"
 fi
 
 if [ "$1" == "getConfsDir" ]; then
@@ -124,4 +132,19 @@ if [ "$1" == "cpConf" ]; then
 	[ ! -d $frompath ] && error "conf $2 not found"
 	topath=$(. $0 getConfDir $3)
 	cp -r $frompath $topath
+fi
+
+if [ "$1" == "addServer" ]; then
+	echo "$3" > "$(. $0 getServersDir)/$2"
+fi
+
+if [ "$1" == "deleteServer" ]; then
+	rm "$(. $0 getServersDir)/$2"
+fi
+
+if [ "$1" == "listServers" ]; then
+	for file in $(ls "$(. $0 getServersDir)/$2")
+	do
+		echo $file=$(cat $(. $0 getServersDir)/$file)
+	done
 fi

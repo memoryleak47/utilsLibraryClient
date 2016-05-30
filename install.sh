@@ -25,6 +25,11 @@ if [ ! -d "$(ul getConfsDir -q)" ]; then
 	mkdir "$(ul getConfsDir -q)"
 fi
 
+# create servers
+if [ ! -d "$(ul getServersDir -q)" ]; then
+	mkdir "$(ul getServersDir -q)"
+fi
+
 # create confs/default
 ul createDefaultConf
 
