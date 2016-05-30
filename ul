@@ -71,7 +71,7 @@ if [ "$1" == "loadConf" ]; then
 	fi
 	. $0 setProperty loadedConf $2
 	sympath="$(. $0 getUlRoot)/loadedConf"
-	if [ -f "$sympath" ]; then
+	if [ -d "$sympath" ]; then
 		rm "$sympath"
 	fi
 	ln -s "$(. $0 getLoadedConfPath)" "$sympath"
