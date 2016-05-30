@@ -38,9 +38,8 @@ function setProperty() # property, value
 {
 	propsfile=$(getPropertiesFile)
 	[ $? == 1 ] && exit 1
-	if [ ! $(sed "s/$1=*/$1=$2/g" -i $propsfile) ]; then
-		echo "$1=$2" >> $propsfile
-	fi
+	sed "/$1=*/d" -i $propsfile
+	echo "$1=$2" >> $propsfile
 }
 
 if [ "$1" == "setProperty" ]; then
@@ -53,7 +52,7 @@ function getProperty() # property
 {
 	propsfile=$(getPropertiesFile)
 	[ $? == 1 ] && exit 1
-	grep "$1=" $propsfile | sed 's/$1=//g'
+	grep "$1=" $propsfile | sed "s/$1=//g"
 }
 
 if [ "$1" == "getProperty" ]; then
