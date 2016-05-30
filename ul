@@ -39,4 +39,4 @@ if [ "$1" == "getProperties" ]; then
 	exit 0
 fi
 
-echo -e "Usage=\tul getUlRoot\n\tul getPropertiesFile\n\tul setProperty <property> <value>\n\tul getProperty <property>"
+echo -e "Usage=\tul getUlRoot\n\tul getPropertiesFile\n\tul setProperty <property> <value>\n\tul getProperty <property>\n\tul getProperties"
