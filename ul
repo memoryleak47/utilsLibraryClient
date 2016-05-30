@@ -68,6 +68,7 @@ if [ "$1" == "loadConf" ]; then
 	if [ -f "$initpath" ]; then
 		./"$initpath"
 	fi
+	. $0 setProperty loadedConf $2
 fi
 
 if [ "$1" == "getConfInit" ]; then
@@ -75,9 +76,7 @@ if [ "$1" == "getConfInit" ]; then
 fi
 
 if [ "$1" == "createConf" ]; then
-	if [ "$(. $0 doesConfExist $2)" == "true" ]; then
-		echo "Conf '$2' already exists"
-	else
+	if [ ! "$(. $0 doesConfExist $2)" == "true" ]; then
 		mkdir "$(. $0 getConfDir $2)"
 	fi
 fi
