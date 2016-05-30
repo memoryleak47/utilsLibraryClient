@@ -11,22 +11,22 @@ fi
 eval "echo $whereToInstall > $HOME/.ulroot"
 
 # create UlRoot
-if [ ! -d $(ul getUlRoot -q) ]; then
-	mkdir $(ul getUlRoot -q)
+if [ ! -d "$(ul getUlRoot -q)" ]; then
+	mkdir "$(ul getUlRoot -q)"
 fi
 
 # create properties
-if [ ! -f $(ul getPropertiesFile -q) ]; then
-	touch $(ul getPropertiesFile -q)
+if [ ! -f "$(ul getPropertiesFile -q)" ]; then
+	touch "$(ul getPropertiesFile -q)"
 fi
 
-# linked?
-echo "Do you want to link .bashrc/.vimrc to the loaded configuration? [yes/no] Default: yes"
-read linked
-if [ -z $linked ]; then
-	linked="yes"
+# create confs
+if [ ! -d "$(ul getConfsDir -q)" ]; then
+	mkdir "$(ul getConfsDir -q)"
 fi
-ul setProperty linked $linked
 
-# link
-# TODO
+# create confs/default
+ul createDefaultConf
+
+# load confs/default
+ul loadConf default

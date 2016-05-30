@@ -5,12 +5,28 @@ function error() {
 	exit 1
 }
 
+if [ "$1" == "--help" ]; then
+	echo -e "Usage=\tul --help
+\tul getUlRoot
+\tul getPropertiesFile
+\tul setProperty <property> <value>
+\tul getProperty <property>
+\tul getProperties
+\tul getConfsDir
+\tul getConfDir <conf>
+\tul getLoadedConfPath
+\tul loadConf <confpath>
+\tul getConfInit <conf>
+\tul createConf <conf>
+\tul createDefaultConf
+\tul doesConfExist"
+fi
+
 if [ "$1" == "getUlRoot" ]; then
 	[ ! "$2" == "-q" ] && [ ! -f "$HOME"/.ulroot ] && error "ulroot unset"
 	x=$(cat "$HOME"/.ulroot)
 	[ ! "$2" == "-q" ] && [ ! -d "$x" ] && error "ulroot directory not found"
 	echo "$x"
-	exit 0
 fi
 
 if [ "$1" == "getPropertiesFile" ]; then
@@ -18,25 +34,63 @@ if [ "$1" == "getPropertiesFile" ]; then
 	[ "$?" == 1 ] && exit 1
 	[ ! "$2" == "-q" ] && [ ! -f "$propsfile" ] && error "propsfile not found unset"
 	echo "$propsfile"
-	exit 0
 fi
 
 if [ "$1" == "setProperty" ]; then
 	propsfile=$(. $0 getPropertiesFile)
 	sed "/$2=*/d" -i $propsfile
 	echo "$2=$3" >> $propsfile
-	exit 0
 fi
 
 if [ "$1" == "getProperty" ]; then
 	propsfile=$(. $0 getPropertiesFile)
 	grep "$2=" $propsfile | sed "s/$2=//g"
-	exit 0
 fi
 
 if [ "$1" == "getProperties" ]; then
 	cat $(. $0 getPropertiesFile)
-	exit 0
 fi
 
-echo -e "Usage=\tul getUlRoot\n\tul getPropertiesFile\n\tul setProperty <property> <value>\n\tul getProperty <property>\n\tul getProperties"
+if [ "$1" == "getConfsDir" ]; then
+	echo "$(. $0 getUlRoot)/confs"
+fi
+
+if [ "$1" == "getConfDir" ]; then
+	echo "$(. $0 getConfsDir)/$2"
+fi
+
+if [ "$1" == "getLoadedConfPath" ]; then
+	echo $(. $0 getConfDir $(. $0 getProperty loadedConf))
+fi
+
+if [ "$1" == "loadConf" ]; then
+	initpath=$(. $0 getConfInit $2)
+	if [ -f "$initpath" ]; then
+		./"$initpath"
+	fi
+fi
+
+if [ "$1" == "getConfInit" ]; then
+	echo $(. $0 getConfDir $2)/init
+fi
+
+if [ "$1" == "createConf" ]; then
+	if [ "$(. $0 doesConfExist $2)" == "true" ]; then
+		echo "Conf '$2' already exists"
+	else
+		mkdir "$(. $0 getConfDir $2)"
+	fi
+fi
+
+if [ "$1" == "createDefaultConf" ]; then
+	. $0 createConf default
+fi
+
+if [ "$1" == "doesConfExist" ]; then
+	if [ -d $(. $0 getConfDir $2) ]; then
+		echo true
+	else
+		echo false
+	fi
+fi
+
