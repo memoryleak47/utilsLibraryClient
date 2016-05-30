@@ -91,7 +91,11 @@ if [ "$1" == "createConf" ]; then
 fi
 
 if [ "$1" == "deleteConf" ]; then
-	if [ "$(. $0 doesConfExist $2)" == "true" ]; then
+	if [ ! "$(. $0 doesConfExist $2)" == "true" ]; then
+		echo "conf $2 doesn't exist"
+	elif [ "$2" == "$(. $0 getProperty loadedConf)" ]; then
+		echo "Cannot delete loaded conf"
+	else
 		confdir="$(. $0 getConfDir $2)"
 		rm -r "$confdir"
 	fi
