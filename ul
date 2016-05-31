@@ -35,76 +35,64 @@ if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 \tul login <username> <password>
 \tul logout"
 
-fi
-
-if [ "$1" == "getUlRoot" ]; then
+elif [ "$1" == "getUlRoot" ]; then
 	[ ! "$2" == "-q" ] && [ ! -f "$HOME"/.ulroot ] && error "ulroot unset"
 	ulroot=$(cat "$HOME"/.ulroot)
 	[ ! "$2" == "-q" ] && [ ! -d "$ulroot" ] && error "'$ulroot' directory not found"
 	echo "$ulroot"
-fi
 
-if [ "$1" == "getPropertiesFile" ]; then
+elif [ "$1" == "getPropertiesFile" ]; then
 	propsfile=$(. $0 getUlRoot)/properties
 	[ ! "$2" == "-q" ] && [ ! -f "$propsfile" ] && error "'$propsfile' not found"
 	echo "$propsfile"
-fi
 
-if [ "$1" == "setProperty" ]; then
+elif [ "$1" == "setProperty" ]; then
 	if [ -z "$3" ]; then
 		error 'setProperty missing argument 3'
 	fi
 	propsfile=$(. $0 getPropertiesFile)
 	sed "/$2=/d" -i "$propsfile"
 	echo "$2=$3" >> "$propsfile"
-fi
 
-if [ "$1" == "getProperty" ]; then
+elif [ "$1" == "getProperty" ]; then
 	if [ -z "$2" ]; then
 		error 'getProperty missing argument 2'
 	fi
 	propsfile="$(. $0 getPropertiesFile)"
 	grep "$2=" "$propsfile" | sed "s/$2=//g"
-fi
 
-if [ "$1" == "deleteProperty" ]; then
+elif [ "$1" == "deleteProperty" ]; then
 	if [ -z "$2" ]; then
 		error 'deleteProperty missing argument 2'
 	fi
 	propsfile="$(. $0 getPropertiesFile)"
 	sed '/^'"$2"'=/d' -i "$propsfile"
-fi
 
-if [ "$1" == "getProperties" ]; then
+elif [ "$1" == "getProperties" ]; then
 	cat "$(. $0 getPropertiesFile)"
-fi
 
-if [ "$1" == "getServersDir" ]; then
+elif [ "$1" == "getServersDir" ]; then
 	serversdir="$(. $0 getUlRoot)/servers"
 	[ ! "$2" == "-q" ] && [ ! -d "$serversdir" ] && error "'$serversdir' not found"
 	echo "$serversdir"
-fi
 
-if [ "$1" == "getConfsDir" ]; then
+elif [ "$1" == "getConfsDir" ]; then
 	confsdir="$(. $0 getUlRoot)/confs"
 	[ ! "$2" == "-q" ] && [ ! -d "$confsdir" ] && error "'$confsdir' not found"
 	echo "$confsdir"
-fi
 
-if [ "$1" == "getConfDir" ]; then
+elif [ "$1" == "getConfDir" ]; then
 	if [ -z "$2" ]; then
 		error 'getConfDir missing argument 2'
 	fi
 	confdir="$(. $0 getConfsDir)/$2"
 	[ ! "$3" == "-q" ] && [ ! -d "$confdir" ] && error "'$confdir' not found"
 	echo "$confdir"
-fi
 
-if [ "$1" == "getLoadedConfPath" ]; then
+elif [ "$1" == "getLoadedConfPath" ]; then
 	echo $(. $0 getConfDir $(. $0 getProperty loadedConf))
-fi
 
-if [ "$1" == "loadConf" ]; then
+elif [ "$1" == "loadConf" ]; then
 	if [ -z "$2" ]; then
 		error 'loadConf missing argument 2'
 	fi
@@ -119,18 +107,16 @@ if [ "$1" == "loadConf" ]; then
 		rm "$sympath"
 	fi
 	ln -s "$(. $0 getLoadedConfPath)" "$sympath"
-fi
 
-if [ "$1" == "getConfInit" ]; then
+elif [ "$1" == "getConfInit" ]; then
 	if [ -z "$2" ]; then
 		error 'getConfInit missing argument 2'
 	fi
 	initpath="$(. $0 getConfDir $2 "-q")/init"
 	[ ! "$3" == "-q" ] && [ ! -f "$initpath" ] && error "'$initpath' not found"
 	echo "$initpath"
-fi
 
-if [ "$1" == "createConf" ]; then
+elif [ "$1" == "createConf" ]; then
 	if [ -z "$2" ]; then
 		error 'createConf missing argument 2'
 	fi
@@ -162,9 +148,8 @@ if [ "$1" == "createConf" ]; then
 		fi
 		# </client create>
 	fi
-fi
 
-if [ "$1" == "deleteConf" ]; then
+elif [ "$1" == "deleteConf" ]; then
 	if [ -z "$2" ]; then
 		error 'deleteConf missing argument 2'
 	fi
@@ -199,13 +184,11 @@ if [ "$1" == "deleteConf" ]; then
 		fi
 		# </client delete>
 	fi
-fi
 
-if [ "$1" == "createDefaultConf" ]; then
+elif [ "$1" == "createDefaultConf" ]; then
 	. $0 createConf default
-fi
 
-if [ "$1" == "doesConfExist" ]; then
+elif [ "$1" == "doesConfExist" ]; then
 	if [ -z "$2" ]; then
 		error 'doesConfExist missing argument 2'
 	fi
@@ -214,14 +197,12 @@ if [ "$1" == "doesConfExist" ]; then
 	else
 		echo false
 	fi
-fi
 
-if [ "$1" == "listLocalConfs" ]; then
+elif [ "$1" == "listLocalConfs" ]; then
 	loadedConf=$(. $0 getProperty loadedConf)
 	ls $(. $0 getConfsDir) | sed "s/^$loadedConf$/<$loadedConf>/g"
-fi
 
-if [ "$1" == "cpConf" ]; then
+elif [ "$1" == "cpConf" ]; then
 	if [ -z "$3" ]; then
 		error 'cpConf missing argument 3'
 	fi
@@ -275,30 +256,26 @@ if [ "$1" == "cpConf" ]; then
 
 		fi
 	fi
-fi
 
-if [ "$1" == "addServer" ]; then
+elif [ "$1" == "addServer" ]; then
 	if [ -z "$3" ]; then
 		error "addServer missing argument 3"
 	fi
 	echo "$3" > "$(. $0 getServersDir)/$2"
-fi
 
-if [ "$1" == "deleteServer" ]; then
+elif [ "$1" == "deleteServer" ]; then
 	if [ -z "$2" ]; then
 		error "deleteServer missing argument 2"
 	fi
 	rm "$(. $0 getServersDir)/$2"
-fi
 
-if [ "$1" == "listServers" ]; then
+elif [ "$1" == "listServers" ]; then
 	for file in $(ls "$(. $0 getServersDir)")
 	do
 		echo $file=$(cat $(. $0 getServersDir)/$file)
 	done
-fi
 
-if [ "$1" == "getServerURL" ]; then
+elif [ "$1" == "getServerURL" ]; then
 	if [ -z "$2" ]; then
 		error "getServerURL missing argument 2"
 	fi
@@ -320,9 +297,8 @@ if [ "$1" == "getServerURL" ]; then
 	else
 		echo $2
 	fi
-fi
 
-if [ "$1" == "getServerConfURL" ]; then
+elif [ "$1" == "getServerConfURL" ]; then
 	if [ -z "$2" ]; then
 		error "getServerConfURL missing argument 2"
 	fi
@@ -330,9 +306,8 @@ if [ "$1" == "getServerConfURL" ]; then
 	server="$(. $0 getServerURL "$(sed 's/:.*//g' <<< "$2")")"
 	confname="$(sed 's/.*://g' <<< "$2")"
 	echo "$server/confs/$confname"
-fi
 
-if [ "$1" == "isServerConf" ]; then
+elif [ "$1" == "isServerConf" ]; then
 	if [ -z "$2" ]; then
 		error "isServerConf missing argument 2"
 	fi
@@ -341,17 +316,17 @@ if [ "$1" == "isServerConf" ]; then
 	else
 		echo false
 	fi
-fi
 
-if [ "$1" == "login" ]; then
+elif [ "$1" == "login" ]; then
 	if [ -z "$3" ]; then
 		error "login missing argument 3"
 	fi
 	. $0 setProperty username "$2"
 	. $0 setProperty password "$3"
-fi
 
-if [ "$1" == "logout" ]; then
+elif [ "$1" == "logout" ]; then
 	. $0 deleteProperty username
 	. $0 deleteProperty password
+else
+	echo "command '$1' not found"
 fi
