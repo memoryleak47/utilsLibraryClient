@@ -130,7 +130,7 @@ fi
 
 if [ "$1" == "listLocalConfs" ]; then
 	loadedConf=$(. $0 getProperty loadedConf)
-	ls $(. $0 getConfsDir) | sed "s/$loadedConf/<$loadedConf>/g"
+	ls $(. $0 getConfsDir) | sed "s/^$loadedConf$/<$loadedConf>/g"
 fi
 
 if [ "$1" == "cpConf" ]; then
