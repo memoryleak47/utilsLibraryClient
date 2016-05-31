@@ -81,7 +81,8 @@ fi
 if [ "$1" == "loadConf" ]; then
 	initpath=$(. $0 getConfInit $2)
 	if [ -f "$initpath" ]; then
-		./"$initpath"
+		chmod +x "$initpath"
+		"$initpath"
 	fi
 	. $0 setProperty loadedConf $2
 	sympath="$(. $0 getUlRoot)/loadedConf"
