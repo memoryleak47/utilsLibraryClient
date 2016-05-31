@@ -220,7 +220,7 @@ elif [ "$1" == "cpConf" ]; then
 			. $0 deleteConf "$3" "-q"
 			. $0 createConf "$3"
 
-			url="$(. $0 getServerURL "$2")/confs/$(sed 's/.*://g' <<< "$2")"
+			url="$(. $0 getServerURL "$2")/confs/$(sed 's/.*://g' <<< "$2").zip"
 			target="$(. $0 getConfDir "$3")"
 			zipfile="$(. $0 getUlRoot)/zippy.zip"
 
