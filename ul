@@ -28,7 +28,8 @@ if [ "$1" == "--help" ]; then
 \tul deleteServer <servername>
 \tul listServers
 \tul getServerURL <server>
-\tul getServerConfURL <conf>"
+\tul getServerConfURL <serverconf>
+\tul getServerConfFiles <serverconf>"
 
 fi
 
@@ -168,6 +169,10 @@ if [ "$1" == "listServers" ]; then
 fi
 
 if [ "$1" == "getServerURL" ]; then
+	if [[ $2 == *:* ]]; then
+		set $2 $(sed 's/:.*//g' <<< $2)
+	fi
+
 	if [[ $2 == @* ]]; then
 		servers="$(. $0 listServers)"
 		for server in $servers
@@ -188,4 +193,11 @@ if [ "$1" == "getServerConfURL" ]; then
 	server="$(. $0 getServerURL "$(sed 's/:.*//g' <<< "$2")")"
 	confname="$(sed 's/.*://g' <<< "$2")"
 	echo "$server/confs/$confname"
+fi
+
+if [ "$1" == "getServerConfFiles" ]; then
+	url="$(. $0 getServerURL "$2")"
+	confname="$(sed 's/.*://g' <<< "$2")"
+	path="$url/index.php?cmd=getFiles&conf=$confname"
+	echo "$(curl -s "$path")"
 fi
