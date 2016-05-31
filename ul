@@ -260,7 +260,7 @@ if [ "$1" == "getServerConfFiles" ]; then
 	fi
 	url="$(. $0 getServerURL "$2")"
 	confname="$(sed 's/.*://g' <<< "$2")"
-	path="$url/index.php?cmd=getFiles&conf=$confname"
+	path="$url/index.php?cmd=getFiles&confname=$confname"
 	x="$(curl -s "$path")"
 	[[ ! $? == 0 ]] && error 'getServerConfFiles: curl failed'
 	echo "$x"
