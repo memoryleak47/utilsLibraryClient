@@ -30,7 +30,6 @@ if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 \tul listServers
 \tul getServerURL <server>
 \tul getServerConfURL <serverconf>
-\tul getServerConfFiles <serverconf>
 \tul isServerConf <conf>"
 
 fi
@@ -189,17 +188,13 @@ if [ "$1" == "cpConf" ]; then
 
 			# <server to local>
 			serverpath="$(. $0 getServerURL "$2")"
-			files="$(. $0 getServerConfFiles $2)"
-			confname="$(sed 's/.*://g' <<< "$2")"
+			serverconfname="$(sed 's/.*://g' <<< "$2")"
 			. $0 deleteConf "$3" "-q"
 			. $0 createConf "$3"
-			for file in $files
-			do
-				filetarget="$(sed 's/confs\/'"$confname"'\///g' <<< "$file")"
-				x=$(curl -s "$serverpath/$file" -o "$(. $0 getConfDir $3)/$filetarget")
-				[[ ! $? == 0 ]] && error 'cpConf: curl failed'
-				echo "$x"
-			done
+			url="$serverpath/index.php?cmd=getConf&confname=$serverconfname"
+			curl -s "$url" -o "$(. $0 getUlRoot)/zippy.zip"
+			unzip "$(. $0 getUlRoot)/zippy.zip" -d "$3"
+			rm "$(. $0 getUlRoot)/zippy.zip"
 			# </server to local>
 
 		fi
@@ -212,10 +207,10 @@ if [ "$1" == "cpConf" ]; then
 			password="$5"
 			serverpath="$(. $0 getServerURL "$3")/index.php?cmd=setConf&confname=$confname&username=$username&password=$password"
 			localconfpath="$(. $0 getConfDir "$2")"
-			zip -r -q zippy.zip "$localconfpath"
+			zip -r -q "$(. $0 getUlRoot)/zippy.zip" "$localconfpath"
 			[[ ! $? == 0 ]] && error 'cpConf: zip failed'
-			x="$(curl -s --form zippyupload=@zippy.zip "$serverpath")"
-			rm zippy.zip
+			x="$(curl -s --form zippyupload="@$(. $0 getUlRoot)/zippy.zip" "$serverpath")"
+			rm "$(. $0 getUlRoot)/zippy.zip"
 			[[ ! $? == 0 ]] && error 'cpConf: curl failed'
 			[[ "${#x}" -gt 2 ]] && error "$x"
 			# </local to server>
@@ -286,18 +281,6 @@ if [ "$1" == "getServerConfURL" ]; then
 	server="$(. $0 getServerURL "$(sed 's/:.*//g' <<< "$2")")"
 	confname="$(sed 's/.*://g' <<< "$2")"
 	echo "$server/confs/$confname"
-fi
-
-if [ "$1" == "getServerConfFiles" ]; then
-	if [ -z "$2" ]; then
-		error "getServerConfFiles missing argument 2"
-	fi
-	url="$(. $0 getServerURL "$2")"
-	confname="$(sed 's/.*://g' <<< "$2")"
-	path="$url/index.php?cmd=getFiles&confname=$confname"
-	x="$(curl -s "$path")"
-	[[ ! $? == 0 ]] && error 'getServerConfFiles: curl failed'
-	echo "$x"
 fi
 
 if [ "$1" == "isServerConf" ]; then
