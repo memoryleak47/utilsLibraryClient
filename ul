@@ -171,9 +171,15 @@ if [ "$1" == "cpConf" ]; then
 	fi
 
 	if [[ $2 == *:* ]]; then
-		if [[ $3 == *:* ]]; then # server to server
+		if [[ $3 == *:* ]]; then
+
+			# <server to server>
 			error "TODO"
-		else # server to local
+			# </server to server>
+
+		else
+
+			# <server to local>
 			serverpath="$(. $0 getServerURL "$2")"
 			files="$(. $0 getServerConfFiles $2)"
 			confname="$(sed 's/.*://g' <<< "$2")"
@@ -186,15 +192,35 @@ if [ "$1" == "cpConf" ]; then
 				[[ ! $? == 0 ]] && error 'cpConf: curl failed'
 				echo "$x"
 			done
+			# </server to local>
+
 		fi
 	else
-		if [[ $3 == *:* ]]; then # local to server
-			error "TODO"
-		else # local to local
-			frompath=$(. $0 getConfDir $2)
-			[ ! -d $frompath ] && error "conf $2 not found"
-			topath=$(. $0 getConfDir $3)
-			cp -r $frompath $topath
+		if [[ $3 == *:* ]]; then
+
+			# <local to server>
+			confname="$(sed 's/.*://g' <<< "$3")"
+			username="$4"
+			password="$5"
+			serverpath="$(. $0 getServerURL "$3")/index.php?cmd=setConf&confname=$confname&username=$username&password=$password"
+			localconfpath="$(. $0 getConfDir "$2")"
+			zip -r -q zippy.zip "$localconfpath"
+			[[ ! $? == 0 ]] && error 'cpConf: zip failed'
+			x="$(curl -s --form zippyupload=@zippy.zip "$serverpath")"
+			rm zippy.zip
+			[[ ! $? == 0 ]] && error 'cpConf: curl failed'
+			[[ "${#x}" -gt 2 ]] && error "$x"
+			# </local to server>
+
+		else
+
+			# <local to local>
+			frompath="$(. $0 getConfDir $2)"
+			[ ! -d "$frompath" ] && error "conf $2 not found"
+			topath="$(. $0 getConfDir "$3")"
+			cp -r "$frompath" "$topath"
+			# </local to local>
+
 		fi
 	fi
 fi
