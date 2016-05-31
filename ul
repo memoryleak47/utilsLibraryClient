@@ -247,10 +247,12 @@ elif [ "$1" == "cpConf" ]; then
 			fi
 			serverpath="$(. $0 getServerURL "$3")/index.php?cmd=setConf&confname=$confname&username=$username&password=$password"
 			localconfpath="$(. $0 getConfDir "$2")"
-			(cd "$localconfpath"; zip -r -q "$(. $0 getUlRoot)/zippy.zip" "$localconfpath")
+			zipfile="$(. $0 getUlRoot)/zippy.zip"
+
+			(cd "$localconfpath"; zip -r -q "$zipfile" ".")
 			[[ ! $? == 0 ]] && error 'cpConf: zip failed'
-			x="$(curl -s --form zippy="@$(. $0 getUlRoot)/zippy.zip" "$serverpath")"
-			rm "$(. $0 getUlRoot)/zippy.zip"
+			x="$(curl -s --form zippy="@$zipfile" "$serverpath")"
+			rm "$zipfile"
 			[[ ! $? == 0 ]] && error 'cpConf: curl failed'
 			[[ "${#x}" -gt 2 ]] && error "$x"
 			# </local to server>
