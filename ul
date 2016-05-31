@@ -30,7 +30,8 @@ if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 \tul listServers
 \tul getServerURL <server>
 \tul getServerConfURL <serverconf>
-\tul getServerConfFiles <serverconf>"
+\tul getServerConfFiles <serverconf>
+\tul isServerConf <conf>"
 
 fi
 
@@ -123,9 +124,16 @@ if [ "$1" == "createConf" ]; then
 	if [ -z "$2" ]; then
 		error 'createConf missing argument 2'
 	fi
-	if [ ! "$(. $0 doesConfExist $2)" == "true" ]; then
-		confdir="$(. $0 getConfDir $2 "-q")"
-		mkdir "$confdir"
+	if [[ "$(. $0 isServerConf "$2")" == true ]]; then
+		confname="$(sed 's/.*://g' <<< "$2")"
+		url="$(. $0 getServerURL "$2")"
+		x="$(curl -s "$url/index.php?cmd=addConf&confname=$confname&username=$3&password=$4")"
+		[[ "${#x}" -gt 2 ]] && error "$x"
+	else
+		if [ ! "$(. $0 doesConfExist $2)" == "true" ]; then
+			confdir="$(. $0 getConfDir $2 "-q")"
+			mkdir "$confdir"
+		fi
 	fi
 fi
 
@@ -250,8 +258,8 @@ if [ "$1" == "getServerURL" ]; then
 	if [ -z "$2" ]; then
 		error "getServerURL missing argument 2"
 	fi
-	if [[ $2 == *:* ]]; then
-		set $2 $(sed 's/:.*//g' <<< $2)
+	if [[ "$(. $0 isServerConf "$2")" == true ]]; then
+		set $2 "$(sed 's/:.*//g' <<< $2)"
 	fi
 
 	if [[ $2 == @* ]]; then
@@ -290,4 +298,15 @@ if [ "$1" == "getServerConfFiles" ]; then
 	x="$(curl -s "$path")"
 	[[ ! $? == 0 ]] && error 'getServerConfFiles: curl failed'
 	echo "$x"
+fi
+
+if [ "$1" == "isServerConf" ]; then
+	if [ -z "$2" ]; then
+		error "isServerConf missing argument 2"
+	fi
+	if [[ $2 == *:* ]]; then
+		echo true
+	else
+		echo false
+	fi
 fi
