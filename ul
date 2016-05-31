@@ -21,12 +21,14 @@ if [ "$1" == "--help" ]; then
 \tul createConf <conf>
 \tul deleteConf <conf>
 \tul createDefaultConf
-\tul doesConfExist
+\tul doesConfExist <conf>
 \tul listLocalConfs
-\tul cpConf
-\tul addServer
-\tul deleteServer
-\tul listServers"
+\tul cpConf <from> <to>
+\tul addServer <servername> <path>
+\tul deleteServer <servername>
+\tul listServers
+\tul getServerURL <server>
+\tul getServerConfURL <conf>"
 
 fi
 
@@ -128,10 +130,26 @@ if [ "$1" == "listLocalConfs" ]; then
 fi
 
 if [ "$1" == "cpConf" ]; then
-	frompath=$(. $0 getConfDir $2)
-	[ ! -d $frompath ] && error "conf $2 not found"
-	topath=$(. $0 getConfDir $3)
-	cp -r $frompath $topath
+	if [ -z "$3" ]; then
+		error "cpConf: wrong amount of arguments"
+	fi
+
+	if [[ $2 == *:* ]]; then
+		if [[ $3 == *:* ]]; then # server to server
+			error "TODO"
+		else # server to local
+			files=$(wget )
+		fi
+	else
+		if [[ $3 == *:* ]]; then # local to server
+			error "TODO"
+		else # local to local
+			frompath=$(. $0 getConfDir $2)
+			[ ! -d $frompath ] && error "conf $2 not found"
+			topath=$(. $0 getConfDir $3)
+			cp -r $frompath $topath
+		fi
+	fi
 fi
 
 if [ "$1" == "addServer" ]; then
@@ -147,4 +165,27 @@ if [ "$1" == "listServers" ]; then
 	do
 		echo $file=$(cat $(. $0 getServersDir)/$file)
 	done
+fi
+
+if [ "$1" == "getServerURL" ]; then
+	if [[ $2 == @* ]]; then
+		servers="$(. $0 listServers)"
+		for server in $servers
+		do
+			one="$(sed 's/@//g' <<< "$2")"
+			two="$(sed 's/=.*//g' <<< "$server")"
+			if [ "$one" == "$two" ]; then
+				echo $server | sed 's/.*=//g'
+				break
+			fi
+		done
+	else
+		echo $2
+	fi
+fi
+
+if [ "$1" == "getServerConfURL" ]; then
+	server="$(. $0 getServerURL "$(sed 's/:.*//g' <<< "$2")")"
+	confname="$(sed 's/.*://g' <<< "$2")"
+	echo "$server/confs/$confname"
 fi
