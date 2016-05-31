@@ -12,6 +12,7 @@ if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 \tul getPropertiesFile
 \tul setProperty <property> <value>
 \tul getProperty <property>
+\tul deleteProperty <property>
 \tul getProperties
 \tul getServersDir
 \tul getConfsDir
@@ -30,7 +31,9 @@ if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 \tul listServers
 \tul getServerURL <server>
 \tul getServerConfURL <serverconf>
-\tul isServerConf <conf>"
+\tul isServerConf <conf>
+\tul login <username> <password>
+\tul logout"
 
 fi
 
@@ -62,6 +65,14 @@ if [ "$1" == "getProperty" ]; then
 	fi
 	propsfile="$(. $0 getPropertiesFile)"
 	grep "$2=" "$propsfile" | sed "s/$2=//g"
+fi
+
+if [ "$1" == "deleteProperty" ]; then
+	if [ -z "$2" ]; then
+		error 'deleteProperty missing argument 2'
+	fi
+	propsfile="$(. $0 getPropertiesFile)"
+	sed '/^'"$2"'=/d' -i "$propsfile"
 fi
 
 if [ "$1" == "getProperties" ]; then
@@ -124,15 +135,32 @@ if [ "$1" == "createConf" ]; then
 		error 'createConf missing argument 2'
 	fi
 	if [[ "$(. $0 isServerConf "$2")" == true ]]; then
+
+		# <server create>
+		if [ -z "$3" ]; then
+			username="$(. $0 getProperty username)"
+		else
+			username="$3"
+		fi
+		if [ -z "$4" ]; then
+			password="$(. $0 getProperty password)"
+		else
+			password="$4"
+		fi
 		confname="$(sed 's/.*://g' <<< "$2")"
 		url="$(. $0 getServerURL "$2")"
-		x="$(curl -s "$url/index.php?cmd=addConf&confname=$confname&username=$3&password=$4")"
+		x="$(curl -s "$url/index.php?cmd=createConf&confname=$confname&username=$username&password=$password")"
 		[[ "${#x}" -gt 2 ]] && error "$x"
+		# </server create>
+
 	else
+
+		# <client create>
 		if [ ! "$(. $0 doesConfExist $2)" == "true" ]; then
 			confdir="$(. $0 getConfDir $2 "-q")"
 			mkdir "$confdir"
 		fi
+		# </client create>
 	fi
 fi
 
@@ -140,15 +168,36 @@ if [ "$1" == "deleteConf" ]; then
 	if [ -z "$2" ]; then
 		error 'deleteConf missing argument 2'
 	fi
-	if [[ ! "$(. $0 doesConfExist "$2")" == "true" ]]; then
-		if [ ! "$3" == "-q" ]; then
-			echo "conf $2 doesn't exist"
+	if [[ "$(. $0 isServerConf "$2")" == true ]]; then
+		# <server delete>
+		if [ -z "$3" ]; then
+			username="$(. $0 getProperty username)"
+		else
+			username="$3"
 		fi
-	elif [ "$2" == "$(. $0 getProperty loadedConf)" ]; then
-		echo "Cannot delete loaded conf"
+		if [ -z "$4" ]; then
+			password="$(. $0 getProperty password)"
+		else
+			password="$4"
+		fi
+		confname="$(sed 's/.*://g' <<< "$2")"
+		url="$(. $0 getServerURL "$2")"
+		x="$(curl -s "$url/index.php?cmd=deleteConf&confname=$confname&username=$username&password=$password")"
+		[[ "${#x}" -gt 2 ]] && error "$x"
+		# </server delete>
 	else
-		confdir="$(. $0 getConfDir $2)"
-		rm -r "$confdir"
+		# <client delete>
+		if [[ ! "$(. $0 doesConfExist "$2")" == "true" ]]; then
+			if [ ! "$3" == "-q" ]; then
+				echo "conf $2 doesn't exist"
+			fi
+		elif [ "$2" == "$(. $0 getProperty loadedConf)" ]; then
+			echo "Cannot delete loaded conf"
+		else
+			confdir="$(. $0 getConfDir $2)"
+			rm -r "$confdir"
+		fi
+		# </client delete>
 	fi
 fi
 
@@ -292,4 +341,17 @@ if [ "$1" == "isServerConf" ]; then
 	else
 		echo false
 	fi
+fi
+
+if [ "$1" == "login" ]; then
+	if [ -z "$3" ]; then
+		error "login missing argument 3"
+	fi
+	. $0 setProperty username "$2"
+	. $0 setProperty password "$3"
+fi
+
+if [ "$1" == "logout" ]; then
+	. $0 deleteProperty username
+	. $0 deleteProperty password
 fi
