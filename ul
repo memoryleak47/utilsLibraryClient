@@ -103,8 +103,10 @@ if [ "$1" == "createConf" ]; then
 fi
 
 if [ "$1" == "deleteConf" ]; then
-	if [ ! "$(. $0 doesConfExist $2)" == "true" ]; then
-		echo "conf $2 doesn't exist"
+	if [[ ! "$(. $0 doesConfExist $2)" == "true" ]]; then
+		if [ ! "$3" == "-q" ]; then
+			echo "conf $2 doesn't exist"
+		fi
 	elif [ "$2" == "$(. $0 getProperty loadedConf)" ]; then
 		echo "Cannot delete loaded conf"
 	else
@@ -139,7 +141,16 @@ if [ "$1" == "cpConf" ]; then
 		if [[ $3 == *:* ]]; then # server to server
 			error "TODO"
 		else # server to local
-			files=$(wget )
+			serverpath="$(. $0 getServerURL "$2")"
+			files="$(. $0 getServerConfFiles $2)"
+			confname="$(sed 's/.*://g' <<< "$2")"
+			. $0 deleteConf "$3" "-q"
+			. $0 createConf "$3"
+			for file in $files
+			do
+				filetarget="$(sed 's/confs\/'"$confname"'\///g' <<< "$file")"
+				curl -s "$serverpath/$file" -o "$(. $0 getConfDir $3)/$filetarget"
+			done
 		fi
 	else
 		if [[ $3 == *:* ]]; then # local to server
