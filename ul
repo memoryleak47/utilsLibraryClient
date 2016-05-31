@@ -219,10 +219,14 @@ elif [ "$1" == "cpConf" ]; then
 			# <server to local>
 			. $0 deleteConf "$3" "-q"
 			. $0 createConf "$3"
+
 			url="$(. $0 getServerURL "$2")/confs/$(sed 's/.*://g' <<< "$2")"
-			curl -s "$url" -o "$(. $0 getUlRoot)/zippy.zip"
-			unzip "$(. $0 getUlRoot)/zippy.zip" -d "$(. $0 getConfDir "$3")"
-			rm "$(. $0 getUlRoot)/zippy.zip"
+			target="$(. $0 getConfDir "$3")"
+			zipfile="$(. $0 getUlRoot)/zippy.zip"
+
+			curl -s "$url" -o "$zipfile"
+			unzip "$zipfile" -d "$target"
+			rm "$zipfile"
 			# </server to local>
 
 		fi
