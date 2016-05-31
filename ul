@@ -217,13 +217,11 @@ elif [ "$1" == "cpConf" ]; then
 		else
 
 			# <server to local>
-			serverpath="$(. $0 getServerURL "$2")"
-			serverconfname="$(sed 's/.*://g' <<< "$2")"
 			. $0 deleteConf "$3" "-q"
 			. $0 createConf "$3"
-			url="$serverpath/index.php?cmd=getConf&confname=$serverconfname"
+			url="$(. $0 getServerURL "$2")/confs/$(sed 's/.*://g' <<< "$2")"
 			curl -s "$url" -o "$(. $0 getUlRoot)/zippy.zip"
-			unzip "$(. $0 getUlRoot)/zippy.zip" -d "$3"
+			unzip "$(. $0 getUlRoot)/zippy.zip" -d "$(. $0 getConfDir "$3")"
 			rm "$(. $0 getUlRoot)/zippy.zip"
 			# </server to local>
 
@@ -233,13 +231,21 @@ elif [ "$1" == "cpConf" ]; then
 
 			# <local to server>
 			confname="$(sed 's/.*://g' <<< "$3")"
-			username="$4"
-			password="$5"
+			if [ -z "$4" ]; then
+				username="$(. $0 getProperty username)"
+			else
+				username="$4"
+			fi
+			if [ -z "$5" ]; then
+				password="$(. $0 getProperty password)"
+			else
+				password="$5"
+			fi
 			serverpath="$(. $0 getServerURL "$3")/index.php?cmd=setConf&confname=$confname&username=$username&password=$password"
 			localconfpath="$(. $0 getConfDir "$2")"
-			zip -r -q "$(. $0 getUlRoot)/zippy.zip" "$localconfpath"
+			(cd "$localconfpath"; zip -r -q "$(. $0 getUlRoot)/zippy.zip" "$localconfpath")
 			[[ ! $? == 0 ]] && error 'cpConf: zip failed'
-			x="$(curl -s --form zippyupload="@$(. $0 getUlRoot)/zippy.zip" "$serverpath")"
+			x="$(curl -s --form zippy="@$(. $0 getUlRoot)/zippy.zip" "$serverpath")"
 			rm "$(. $0 getUlRoot)/zippy.zip"
 			[[ ! $? == 0 ]] && error 'cpConf: curl failed'
 			[[ "${#x}" -gt 2 ]] && error "$x"
