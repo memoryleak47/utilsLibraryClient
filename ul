@@ -173,7 +173,7 @@ elif [ "$1" == "createConf" ]; then
 		fi
 		confname="$(sed 's/.*://g' <<< "$2")"
 		url="$(. $0 getServerURL "$2")/index.php?cmd=createConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
-		x="$(curl -s "$url"
+		x="$(curl -s "$url")"
 		[[ "${#x}" -gt 2 ]] && error "$x"
 		# </server create>
 
@@ -205,7 +205,7 @@ elif [ "$1" == "deleteConf" ]; then
 		fi
 		confname="$(sed 's/.*://g' <<< "$2")"
 		url="$(. $0 getServerURL "$2")/index.php?cmd=deleteConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
-		x="$(curl -s "$url"
+		x="$(curl -s "$url")"
 		[[ "${#x}" -gt 2 ]] && error "$x"
 		# </server delete>
 	else
