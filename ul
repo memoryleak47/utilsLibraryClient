@@ -20,6 +20,8 @@ if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 \tul getLoadedConfPath
 \tul loadConf <confpath>
 \tul getConfInit <conf>
+\tul createUser <username> <password>
+\tul deleteUser <username> <password>
 \tul createConf <conf>
 \tul deleteConf <conf>
 \tul createDefaultConf
@@ -115,6 +117,24 @@ elif [ "$1" == "getConfInit" ]; then
 	initpath="$(. $0 getConfDir $2 "-q")/init"
 	[ ! "$3" == "-q" ] && [ ! -f "$initpath" ] && error "'$initpath' not found"
 	echo "$initpath"
+
+elif [ "$1" == "createUser" ]; then # server, username, password
+	if [ -z "$4" ]; then
+		error 'createUser missing argument 4'
+	fi
+	server="$(. $0 getServerURL "$2")"; username="$3"; password="$4"
+	url="$server/index.php?cmd=createUser&username=$username&password=$password"
+	x="$(curl -s "$url")"
+	[[ "${#x}" -gt 2 ]] && error "$x"
+
+elif [ "$1" == "deleteUser" ]; then # server, username, password
+	if [ -z "$4" ]; then
+		error 'deleteUser missing argument 4'
+	fi
+	server="$(. $0 getServerURL "$2")"; username="$3"; password="$4"
+	url="$server/index.php?cmd=deleteUser&username=$username&password=$password"
+	x="$(curl -s "$url")"
+	[[ "${#x}" -gt 2 ]] && error "$x"
 
 elif [ "$1" == "createConf" ]; then
 	if [ -z "$2" ]; then
