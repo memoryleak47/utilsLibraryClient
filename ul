@@ -92,9 +92,6 @@ elif [ "$1" == "loadConf" ]; then
 		"$onloadpath"
 	fi
 
-	. $0 updateConf "$conf"
-
-
 elif [ "$1" == "updateConf" ]; then
 	. $0 clearInheritances "$2"
 	. $0 buildInheritances "$2"
