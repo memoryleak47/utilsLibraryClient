@@ -232,6 +232,7 @@ elif [ "$1" == "cpConf" ]; then
 			else
 				password="$5"
 			fi
+			confname="$(sed 's/.*://g' <<< "$two")"
 			url="$(awk -F ':' '{print $1}' <<< "$two")/index.php?cmd=setConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
 			x="$(curl -s --form zippy="@$zipfile" "$url")"
 			rm "$zipfile"
