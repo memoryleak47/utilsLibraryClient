@@ -72,10 +72,19 @@ elif [ "$1" == "loadConf" ]; then
 	if [ -z "$2" ]; then
 		error 'loadConf missing argument 2'
 	fi
-	[[ $(. $0 conftype "$2") == serverconf* ]] && error "You can only load local confs"
-	ulroot="$(. $0 getUlRoot)"
-	confpath="$ulroot/confs/$2"
-	[ ! -d "$confpath" ] && error "conf $confpath not found"
+	if [ ! "$2" == "loaded" ]; then
+		[[ $(. $0 conftype "$2") == serverconf* ]] && error "You can only load local confs"
+		ulroot="$(. $0 getUlRoot)"
+		confpath="$ulroot/confs/$2"
+		[ ! -d "$confpath" ] && error "conf $confpath not found"
+		. $0 setProperty loadedConf "$2"
+
+		sympath="$ulroot/confs/loaded"
+		if [ -d "$sympath" ]; then
+			rm "$sympath"
+		fi
+		ln -s "$ulroot/confs/$2" "$sympath"
+	fi
 
 	# onload
 	onloadpath="$confpath/ulres/onload"
@@ -86,13 +95,6 @@ elif [ "$1" == "loadConf" ]; then
 
 	. $0 updateConf "$2"
 
-	. $0 setProperty loadedConf "$2"
-
-	sympath="$ulroot/confs/loaded"
-	if [ -d "$sympath" ]; then
-		rm "$sympath"
-	fi
-	ln -s "$ulroot/confs/$2" "$sympath"
 
 elif [ "$1" == "updateConf" ]; then
 	. $0 clearInheritances "$2"
