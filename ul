@@ -26,100 +26,43 @@ function urlencode()
 
 if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 	echo -e "Usage=\tul --help
-\tul getUlRoot
-
-\tul getPropertiesFile
-\tul setProperty <property> <value>
-\tul getProperty <property>
-\tul deleteProperty <property>
-\tul getProperties
-
-\tul getServersDir
-\tul getConfsDir
-\tul getConfDir <conf>
-\tul getLoadedConfPath
-
 \tul loadConf <confpath>
 \tul updateConf <confpath>
-
-\tul getConfOnLoad <conf>
-\tul getConfOnUpdate <conf>
-\tul getConfOnCopy <conf>
-\tul getConfOnPaste <conf>
-
 \tul createUser <username> <password>
 \tul deleteUser <username> <password>
 \tul createConf <conf>
 \tul deleteConf <conf>
 \tul createDefaultConf
-\tul doesConfExist <conf>
 \tul listLocalConfs
 \tul cpConf <from> <to>
 \tul addServer <servername> <path>
 \tul deleteServer <servername>
 \tul listServers
+\tul login <username> <password>
+\tul logout
+
+\tul getUlRoot
+\tul getPropertiesFile
+\tul setProperty <property> <value>
+\tul getProperty <property>
+\tul deleteProperty <property>
+\tul getProperties
+\tul getServersDir
+\tul getConfsDir
+\tul getConfDir <conf>
+\tul getLoadedConfPath
+\tul getConfOnLoad <conf>
+\tul getConfOnUpdate <conf>
+\tul getConfOnCopy <conf>
+\tul getConfOnPaste <conf>
+\tul doesConfExist <conf>
 \tul getServerURL <server>
 \tul getServerConfURL <serverconf>
-\tul isServerConf <conf>
-\tul login <username> <password>
-\tul logout"
+\tul isServerConf <conf>"
 
-elif [ "$1" == "getUlRoot" ]; then
-	[ ! "$2" == "-q" ] && [ ! -f "$HOME"/.ulroot ] && error "ulroot unset"
-	ulroot=$(cat "$HOME"/.ulroot)
-	[ ! "$2" == "-q" ] && [ ! -d "$ulroot" ] && error "'$ulroot' directory not found"
-	echo "$ulroot"
-
-elif [ "$1" == "getPropertiesFile" ]; then
-	propsfile=$(. $0 getUlRoot)/properties
-	[ ! "$2" == "-q" ] && [ ! -f "$propsfile" ] && error "'$propsfile' not found"
-	echo "$propsfile"
-
-elif [ "$1" == "setProperty" ]; then
-	if [ -z "$3" ]; then
-		error 'setProperty missing argument 3'
-	fi
-	propsfile=$(. $0 getPropertiesFile)
-	sed "/$2=/d" -i "$propsfile"
-	echo "$2=$3" >> "$propsfile"
-
-elif [ "$1" == "getProperty" ]; then
-	if [ -z "$2" ]; then
-		error 'getProperty missing argument 2'
-	fi
-	propsfile="$(. $0 getPropertiesFile)"
-	grep "$2=" "$propsfile" | sed "s/$2=//g"
-
-elif [ "$1" == "deleteProperty" ]; then
-	if [ -z "$2" ]; then
-		error 'deleteProperty missing argument 2'
-	fi
-	propsfile="$(. $0 getPropertiesFile)"
-	sed '/^'"$2"'=/d' -i "$propsfile"
-
-elif [ "$1" == "getProperties" ]; then
-	cat "$(. $0 getPropertiesFile)"
-
-elif [ "$1" == "getServersDir" ]; then
-	serversdir="$(. $0 getUlRoot)/servers"
-	[ ! "$2" == "-q" ] && [ ! -d "$serversdir" ] && error "'$serversdir' not found"
-	echo "$serversdir"
-
-elif [ "$1" == "getConfsDir" ]; then
-	confsdir="$(. $0 getUlRoot)/confs"
-	[ ! "$2" == "-q" ] && [ ! -d "$confsdir" ] && error "'$confsdir' not found"
-	echo "$confsdir"
-
-elif [ "$1" == "getConfDir" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfDir missing argument 2'
-	fi
-	confdir="$(. $0 getConfsDir)/$2"
-	[ ! "$3" == "-q" ] && [ ! -d "$confdir" ] && error "'$confdir' not found"
-	echo "$confdir"
-
-elif [ "$1" == "getLoadedConfPath" ]; then
-	echo $(. $0 getConfDir $(. $0 getProperty loadedConf))
+#
+# foreground
+#
 
 elif [ "$1" == "loadConf" ]; then
 	if [ -z "$2" ]; then
@@ -158,38 +101,6 @@ elif [ "$1" == "loadConf" ]; then
 elif [ "$1" == "updateConf" ]; then
 	# TODO
 	echo TODO updateConf
-
-elif [ "$1" == "getConfOnLoad" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfOnLoad missing argument 2'
-	fi
-	path="$(. $0 getConfDir $2 "-q")/ulres/onload"
-	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
-	echo "$path"
-
-elif [ "$1" == "getConfOnUpdate" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfOnUpdate missing argument 2'
-	fi
-	path="$(. $0 getConfDir $2 "-q")/ulres/onupdate"
-	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
-	echo "$path"
-
-elif [ "$1" == "getConfOnCopy" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfOnCopy missing argument 2'
-	fi
-	path="$(. $0 getConfDir $2 "-q")/ulres/oncopy"
-	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
-	echo "$path"
-
-elif [ "$1" == "getConfOnPaste" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfOnPaste missing argument 2'
-	fi
-	path="$(. $0 getConfDir $2 "-q")/ulres/onpaste"
-	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
-	echo "$path"
 
 elif [ "$1" == "createUser" ]; then # server, username, password
 	if [ -z "$4" ]; then
@@ -380,6 +291,110 @@ elif [ "$1" == "listServers" ]; then
 		echo $file=$(cat $(. $0 getServersDir)/$file)
 	done
 
+elif [ "$1" == "login" ]; then
+	if [ -z "$3" ]; then
+		error "login missing argument 3"
+	fi
+	. $0 setProperty username "$2"
+	. $0 setProperty password "$3"
+
+elif [ "$1" == "logout" ]; then
+	. $0 deleteProperty username
+	. $0 deleteProperty password
+
+#
+# background
+#
+
+elif [ "$1" == "getUlRoot" ]; then
+	[ ! "$2" == "-q" ] && [ ! -f "$HOME"/.ulroot ] && error "ulroot unset"
+	ulroot=$(cat "$HOME"/.ulroot)
+	[ ! "$2" == "-q" ] && [ ! -d "$ulroot" ] && error "'$ulroot' directory not found"
+	echo "$ulroot"
+
+elif [ "$1" == "getPropertiesFile" ]; then
+	propsfile=$(. $0 getUlRoot)/properties
+	[ ! "$2" == "-q" ] && [ ! -f "$propsfile" ] && error "'$propsfile' not found"
+	echo "$propsfile"
+
+elif [ "$1" == "setProperty" ]; then
+	if [ -z "$3" ]; then
+		error 'setProperty missing argument 3'
+	fi
+	propsfile=$(. $0 getPropertiesFile)
+	sed "/$2=/d" -i "$propsfile"
+	echo "$2=$3" >> "$propsfile"
+
+elif [ "$1" == "getProperty" ]; then
+	if [ -z "$2" ]; then
+		error 'getProperty missing argument 2'
+	fi
+	propsfile="$(. $0 getPropertiesFile)"
+	grep "$2=" "$propsfile" | sed "s/$2=//g"
+
+elif [ "$1" == "deleteProperty" ]; then
+	if [ -z "$2" ]; then
+		error 'deleteProperty missing argument 2'
+	fi
+	propsfile="$(. $0 getPropertiesFile)"
+	sed '/^'"$2"'=/d' -i "$propsfile"
+
+elif [ "$1" == "getProperties" ]; then
+	cat "$(. $0 getPropertiesFile)"
+
+elif [ "$1" == "getServersDir" ]; then
+	serversdir="$(. $0 getUlRoot)/servers"
+	[ ! "$2" == "-q" ] && [ ! -d "$serversdir" ] && error "'$serversdir' not found"
+	echo "$serversdir"
+
+elif [ "$1" == "getConfsDir" ]; then
+	confsdir="$(. $0 getUlRoot)/confs"
+	[ ! "$2" == "-q" ] && [ ! -d "$confsdir" ] && error "'$confsdir' not found"
+	echo "$confsdir"
+
+elif [ "$1" == "getConfDir" ]; then
+	if [ -z "$2" ]; then
+		error 'getConfDir missing argument 2'
+	fi
+	confdir="$(. $0 getConfsDir)/$2"
+	[ ! "$3" == "-q" ] && [ ! -d "$confdir" ] && error "'$confdir' not found"
+	echo "$confdir"
+
+elif [ "$1" == "getLoadedConfPath" ]; then
+	echo $(. $0 getConfDir $(. $0 getProperty loadedConf))
+
+elif [ "$1" == "getConfOnLoad" ]; then
+	if [ -z "$2" ]; then
+		error 'getConfOnLoad missing argument 2'
+	fi
+	path="$(. $0 getConfDir $2 "-q")/ulres/onload"
+	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
+	echo "$path"
+
+elif [ "$1" == "getConfOnUpdate" ]; then
+	if [ -z "$2" ]; then
+		error 'getConfOnUpdate missing argument 2'
+	fi
+	path="$(. $0 getConfDir $2 "-q")/ulres/onupdate"
+	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
+	echo "$path"
+
+elif [ "$1" == "getConfOnCopy" ]; then
+	if [ -z "$2" ]; then
+		error 'getConfOnCopy missing argument 2'
+	fi
+	path="$(. $0 getConfDir $2 "-q")/ulres/oncopy"
+	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
+	echo "$path"
+
+elif [ "$1" == "getConfOnPaste" ]; then
+	if [ -z "$2" ]; then
+		error 'getConfOnPaste missing argument 2'
+	fi
+	path="$(. $0 getConfDir $2 "-q")/ulres/onpaste"
+	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
+	echo "$path"
+
 elif [ "$1" == "getServerURL" ]; then
 	if [ -z "$2" ]; then
 		error "getServerURL missing argument 2"
@@ -422,16 +437,6 @@ elif [ "$1" == "isServerConf" ]; then
 		echo false
 	fi
 
-elif [ "$1" == "login" ]; then
-	if [ -z "$3" ]; then
-		error "login missing argument 3"
-	fi
-	. $0 setProperty username "$2"
-	. $0 setProperty password "$3"
-
-elif [ "$1" == "logout" ]; then
-	. $0 deleteProperty username
-	. $0 deleteProperty password
 else
 	echo "command '$1' not found"
 fi
