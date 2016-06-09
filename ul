@@ -201,6 +201,9 @@ elif [ "$1" == "cpConf" ]; then
 
 	one="$(. $0 resolveConf "$2")"
 	two="$(. $0 resolveConf "$3")"
+	if [[ $(. $0 conftype "$one") == localconf* ]]; then
+		. $0 clearInheritances "$one"
+	fi
 
 	if [[ $one == *:* ]]; then
 		if [[ $two == *:* ]]; then
