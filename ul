@@ -75,17 +75,15 @@ elif [ "$1" == "loadConf" ]; then
 	conf="$(. $0 resolveConf "$2")"
 	ulroot="$(. $0 getUlRoot)"
 
-	if [ ! "$conf" == "$ulroot/confs/loaded" ]; then
-		[[ $(. $0 conftype "$conf") == serverconf* ]] && error "You can only load local confs"
-		[ ! -d "$conf" ] && error "conf $conf not found"
-		. $0 setProperty loadedConf "$(sed 's/.*\/confs\///g' <<< "$conf")"
+	[[ $(. $0 conftype "$conf") == serverconf* ]] && error "You can only load local confs"
+	[ ! -d "$conf" ] && error "conf $conf not found"
+	. $0 setProperty loadedConf "$(sed 's/.*\/confs\///g' <<< "$conf")"
 
-		sympath="$ulroot/confs/loaded"
-		if [ -d "$sympath" ]; then
-			rm "$sympath"
-		fi
-		ln -s "$conf" "$sympath"
+	sympath="$ulroot/confs/loaded"
+	if [ -d "$sympath" ]; then
+		rm "$sympath"
 	fi
+	ln -s "$conf" "$sympath"
 
 	# onload
 	onloadpath="$confpath/ulres/onload"
@@ -408,7 +406,11 @@ elif [ "$1" == "resolveConf" ]; then # resolves @server notation / localconfname
 	fi
 
 	t="$(. $0 conftype "$2")"
-	if [[ $t == localconfname ]]; then
+	ulroot="$(. $0 getUlRoot)"
+	if [[ "$2" == "loaded" ]] || [[ "$2" == "$ulroot/confs/loaded" ]]; then
+		loaded="$(. $0 getProperty loadedConf)"
+		echo "$ulroot/confs/$loaded"
+	elif [[ $t == localconfname ]]; then
 		echo "$(. $0 getUlRoot)/confs/$2"
 	elif [[ $t == serverconfpath ]]; then
 		echo "$(awk -F '/confs/' '{print $1}' <<< "$2"):$(awk -F '.zip' '{print $1}' <<< "$(awk -F '/confs/' '{print $2}' <<< "$2")")"
