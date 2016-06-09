@@ -250,7 +250,7 @@ elif [ "$1" == "cpConf" ]; then
 			zipfile="$(. $0 getUlRoot)/zippy.zip"
 
 			curl -s "$url" -o "$zipfile"
-			unzip "$zipfile" -d "$two"
+			unzip -q "$zipfile" -d "$two"
 			rm "$zipfile"
 			# </server to local>
 
