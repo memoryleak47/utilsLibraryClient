@@ -60,7 +60,9 @@ if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 \tul getProperties
 \tul getServerURL <server>
 \tul conftype <conf>
-\tul resolveConf <conf>"
+\tul resolveConf <conf>
+\tul buildInheritances <localconf>
+\tul clearInheritances <localconf>"
 
 #
 # foreground
@@ -76,21 +78,8 @@ elif [ "$1" == "loadConf" ]; then
 	[ ! -d "$confpath" ] && error "conf $confpath not found"
 
 	# inherit
-	inheritpath="$confpath/ulres/inherit"
-	if [ -f "$inheritpath" ]; then
-		while read line;
-		do
-			from="$(awk -F ',' '{print $1 }' <<< "$line")"
-			to="$(awk -F ',' '{print $2 }' <<< "$line")"
-			override="$(awk -F ',' '{print $3 }' <<< "$line")"
-			. $0 cpConf "$from" "$confpath/$to"
-			if [ -n "$override" ]; then
-				from="$confpath/ulres/inheritpaths/$override"
-				[ ! -d "$from" ] && error "$from not found"
-				mv "$from"/* "$confpath/$to"
-			fi
-		done < "$inheritpath"
-	fi
+	. $0 clearInheritances "$2"
+	. $0 buildInheritances "$2"
 		
 	# onload
 	onloadpath="$confpath/ulres/onload"
@@ -404,7 +393,6 @@ elif [ "$1" == "conftype" ]; then
 
 elif [ "$1" == "resolveConf" ]; then # resolves @server notation / localconfname -> localconfpath / serverconfpath -> serverconfname
 	if [ -z "$2" ]; then
-		echo "{$*}"
 		error "resolveConf missing argument 2"
 	fi
 
@@ -430,6 +418,42 @@ elif [ "$1" == "resolveConf" ]; then # resolves @server notation / localconfname
 		done
 	else
 		echo "$2"
+	fi
+
+elif [ "$1" == "buildInheritances" ]; then
+	if [ -z "$2" ]; then
+		error "buildInheritances missing argument 2"
+	fi
+
+	confpath="$(. $0 resolveConf "$2")"
+	inheritpath="$confpath/ulres/inherit"
+	if [ -f "$inheritpath" ]; then
+		while read line;
+		do
+			from="$(awk -F ',' '{print $1 }' <<< "$line")"
+			to="$(awk -F ',' '{print $2 }' <<< "$line")"
+			override="$(awk -F ',' '{print $3 }' <<< "$line")"
+			. $0 cpConf "$from" "$confpath/$to"
+			if [ -n "$override" ]; then
+				from="$confpath/ulres/inheritpaths/$override"
+				[ ! -d "$from" ] && error "$from not found"
+				mv "$from"/* "$confpath/$to"
+			fi
+		done < "$inheritpath"
+	fi
+
+elif [ "$1" == "clearInheritances" ]; then
+	if [ -z "$2" ]; then
+		error "clearInheritances missing argument 2"
+	fi
+
+	confpath="$(. $0 resolveConf "$2")"
+	inheritpath="$confpath/ulres/inherit"
+	if [ -f "$inheritpath" ]; then
+		while read line;
+		do
+			rm -r "$confpath/$(awk -F ',' '{print $2 }' <<< "$line")"
+		done < "$inheritpath"
 	fi
 
 else
