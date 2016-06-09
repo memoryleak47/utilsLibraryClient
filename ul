@@ -87,6 +87,7 @@ elif [ "$1" == "loadConf" ]; then
 	. $0 updateConf "$2"
 
 	. $0 setProperty loadedConf "$2"
+
 	sympath="$ulroot/confs/loaded"
 	if [ -d "$sympath" ]; then
 		rm "$sympath"
@@ -459,7 +460,11 @@ elif [ "$1" == "clearInheritances" ]; then
 	if [ -f "$inheritpath" ]; then
 		while read line;
 		do
-			rm -r "$confpath/$(awk -F ',' '{print $2 }' <<< "$line")"
+			to="$(awk -F ',' '{print $2 }' <<< "$line")"
+			thing="$confpath/$to"
+			if [ -e "$thing" ]; then
+				rm -r "$thing"
+			fi
 		done < "$inheritpath"
 	fi
 
