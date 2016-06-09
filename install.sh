@@ -11,23 +11,25 @@ fi
 eval "echo $whereToInstall > $HOME/.ulroot"
 
 # create UlRoot
-if [ ! -d "$(ul getUlRoot -q)" ]; then
-	mkdir "$(ul getUlRoot -q)"
+ulroot="$(ul getUlRoot -q)"
+if [ ! -d "$ulroot" ]; then
+	mkdir "$ulroot"
 fi
 
 # create properties
-if [ ! -f "$(ul getPropertiesFile -q)" ]; then
-	touch "$(ul getPropertiesFile -q)"
+propsfile="$ulroot/properties"
+if [ ! -f "$propsfile" ]; then
+	touch "$propsfile"
 fi
 
 # create confs
-if [ ! -d "$(ul getConfsDir -q)" ]; then
-	mkdir "$(ul getConfsDir -q)"
+if [ ! -d "$ulroot/confs" ]; then
+	mkdir "$ulroot/confs"
 fi
 
 # create servers
-if [ ! -d "$(ul getServersDir -q)" ]; then
-	mkdir "$(ul getServersDir -q)"
+if [ ! -d "$ulroot/servers" ]; then
+	mkdir "$ulroot/servers"
 fi
 
 # create confs/default

@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# "<url>:<conf>" = serverconfname
+# "@<server>:<conf>" = serverconfname
+# "<conf>" = localconfname
+
+# "/home/<USER>/.ul/confs/<conf>" = localconfpath
+# "<url>/confs/<confname>.zip" = serverconfpath
+
+# serverconfname / localconfname = confname
+# serverconfpath / localconfpath = confpath
+# confname / confpath = conf
+
 function error()
 {
 	echo "ERROR: $*" 1>&2
@@ -26,39 +37,30 @@ function urlencode()
 
 if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 	echo -e "Usage=\tul --help
-\tul loadConf <confpath>
-\tul updateConf <confpath>
+
+\tul loadConf <localconf>
+\tul updateConf <localconf>
 \tul createUser <username> <password>
 \tul deleteUser <username> <password>
 \tul createConf <conf>
 \tul deleteConf <conf>
 \tul createDefaultConf
 \tul listLocalConfs
-\tul cpConf <from> <to>
-\tul addServer <servername> <path>
+\tul cpConf <conf> <conf>
+\tul addServer <servername> <URL>
 \tul deleteServer <servername>
 \tul listServers
 \tul login <username> <password>
 \tul logout
 
 \tul getUlRoot
-\tul getPropertiesFile
 \tul setProperty <property> <value>
 \tul getProperty <property>
 \tul deleteProperty <property>
 \tul getProperties
-\tul getServersDir
-\tul getConfsDir
-\tul getConfDir <conf>
-\tul getLoadedConfPath
-\tul getConfOnLoad <conf>
-\tul getConfOnUpdate <conf>
-\tul getConfOnCopy <conf>
-\tul getConfOnPaste <conf>
-\tul doesConfExist <conf>
 \tul getServerURL <server>
-\tul getServerConfURL <serverconf>
-\tul isServerConf <conf>"
+\tul conftype <conf>
+\tul resolveConf <conf>"
 
 #
 # foreground
@@ -68,38 +70,43 @@ elif [ "$1" == "loadConf" ]; then
 	if [ -z "$2" ]; then
 		error 'loadConf missing argument 2'
 	fi
+	[[ $(. $0 conftype "$2") == serverconf* ]] && error "You can only load local confs"
+	ulroot="$(. $0 getUlRoot)"
+	confpath="$ulroot/confs/$2"
+	[ ! -d "$confpath" ] && error "conf $confpath not found"
 
 	# inherit
-	inheritpath="$(. $0 getConfDir "$2")/ulres/inherit"
+	inheritpath="$confpath/ulres/inherit"
 	if [ -f "$inheritpath" ]; then
 		while read line;
 		do
-			srcconf="$(awk -F ',' '{print $1 }' <<< "$line")"
-			path="$(awk -F ',' '{print $2 }' <<< "$line")"
+			from="$(awk -F ',' '{print $1 }' <<< "$line")"
+			to="$(awk -F ',' '{print $2 }' <<< "$line")"
 			override="$(awk -F ',' '{print $3 }' <<< "$line")"
-			. $0 cpConf "$srcconf" "$2/$path"
+			. $0 cpConf "$from" "$confpath/$to"
 			if [ -n "$override" ]; then
-				mv "$(. "$0" getConfDir "$2")/ulres/inheritpaths/$override"/* "$(. "$0" getConfDir "$2")/$path"
+				from="$confpath/ulres/inheritpaths/$override"
+				[ ! -d "$from" ] && error "$from not found"
+				mv "$from"/* "$confpath/$to"
 			fi
 		done < "$inheritpath"
 	fi
 		
 	# onload
-	onloadpath="$(. $0 getConfOnLoad "$2" "-q")"
+	onloadpath="$confpath/ulres/onload"
 	if [ -f "$onloadpath" ]; then
 		chmod +x "$onloadpath"
 		"$onloadpath"
 	fi
 
 	. $0 setProperty loadedConf "$2"
-	sympath="$(. $0 getUlRoot)/loadedConf"
+	sympath="$ulroot/loadedConf"
 	if [ -d "$sympath" ]; then
 		rm "$sympath"
 	fi
-	ln -s "$(. $0 getLoadedConfPath)" "$sympath"
+	ln -s "$ulroot/confs/$2" "$sympath"
 
 elif [ "$1" == "updateConf" ]; then
-	# TODO
 	echo TODO updateConf
 
 elif [ "$1" == "createUser" ]; then # server, username, password
@@ -124,7 +131,8 @@ elif [ "$1" == "createConf" ]; then
 	if [ -z "$2" ]; then
 		error 'createConf missing argument 2'
 	fi
-	if [[ "$(. $0 isServerConf "$2")" == true ]]; then
+	conf="$(. $0 resolveConf "$2")"
+	if [[ $(. $0 conftype "$conf") == serverconf* ]]; then
 
 		# <server create>
 		if [ -z "$3" ]; then
@@ -146,9 +154,8 @@ elif [ "$1" == "createConf" ]; then
 	else
 
 		# <client create>
-		if [ ! "$(. $0 doesConfExist $2)" == "true" ]; then
-			confdir="$(. $0 getConfDir $2 "-q")"
-			mkdir "$confdir"
+		if [ ! -d "$conf" ]; then
+			mkdir "$conf"
 		fi
 		# </client create>
 	fi
@@ -157,7 +164,8 @@ elif [ "$1" == "deleteConf" ]; then
 	if [ -z "$2" ]; then
 		error 'deleteConf missing argument 2'
 	fi
-	if [[ "$(. $0 isServerConf "$2")" == true ]]; then
+	conf="$(. $0 resolveConf "$2")"
+	if [[ $(. $0 conftype "$conf") == serverconf* ]]; then
 		# <server delete>
 		if [ -z "$3" ]; then
 			username="$(. $0 getProperty username)"
@@ -169,22 +177,21 @@ elif [ "$1" == "deleteConf" ]; then
 		else
 			password="$4"
 		fi
-		confname="$(sed 's/.*://g' <<< "$2")"
-		url="$(. $0 getServerURL "$2")/index.php?cmd=deleteConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
+		confname="$(sed 's/.*://g' <<< "$conf")"
+		url="$(. $0 getServerURL "$conf")/index.php?cmd=deleteConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
 		x="$(curl -s "$url")"
 		[[ "${#x}" -gt 2 ]] && error "$x"
 		# </server delete>
 	else
 		# <client delete>
-		if [[ ! "$(. $0 doesConfExist "$2")" == "true" ]]; then
+		if [ ! -d "$conf" ]; then
 			if [ ! "$3" == "-q" ]; then
-				echo "conf $2 doesn't exist"
+				echo "conf $conf doesn't exist"
 			fi
-		elif [ "$2" == "$(. $0 getProperty loadedConf)" ]; then
+		elif [ "$conf" == "$(. $0 getProperty loadedConf)" ]; then
 			echo "Cannot delete loaded conf"
 		else
-			confdir="$(. $0 getConfDir $2)"
-			rm -r "$confdir"
+			rm -r "$conf"
 		fi
 		# </client delete>
 	fi
@@ -192,27 +199,22 @@ elif [ "$1" == "deleteConf" ]; then
 elif [ "$1" == "createDefaultConf" ]; then
 	. $0 createConf default
 
-elif [ "$1" == "doesConfExist" ]; then
-	if [ -z "$2" ]; then
-		error 'doesConfExist missing argument 2'
-	fi
-	if [ -d $(. $0 getConfDir "$2" '-q') ]; then
-		echo true
-	else
-		echo false
-	fi
-
 elif [ "$1" == "listLocalConfs" ]; then
 	loadedConf=$(. $0 getProperty loadedConf)
-	ls $(. $0 getConfsDir) | sed "s/^$loadedConf$/<$loadedConf>/g"
+	ls "$(. $0 getUlRoot)/confs" | sed "s/^$loadedConf$/<$loadedConf>/g"
 
 elif [ "$1" == "cpConf" ]; then
 	if [ -z "$3" ]; then
 		error 'cpConf missing argument 3'
 	fi
 
-	if [[ $2 == *:* ]]; then
-		if [[ $3 == *:* ]]; then
+	ulroot="$(. $0 getUlRoot)"
+
+	one="$(. $0 resolveConf "$2")"
+	two="$(. $0 resolveConf "$3")"
+
+	if [[ $one == *:* ]]; then
+		if [[ $two == *:* ]]; then
 
 			# <server to server>
 			error "TODO"
@@ -221,24 +223,23 @@ elif [ "$1" == "cpConf" ]; then
 		else
 
 			# <server to local>
-			. $0 deleteConf "$3" "-q"
-			. $0 createConf "$3"
+			. $0 deleteConf "$two" "-q"
+			. $0 createConf "$two"
 
-			url="$(. $0 getServerURL "$2")/confs/$(sed 's/.*://g' <<< "$2").zip"
-			target="$(. $0 getConfDir "$3")"
+			url="$(awk -F ':' '{print $1}' <<< "$one")/confs/$(awk -F ':' '{print $2}' <<< "$one").zip"
 			zipfile="$(. $0 getUlRoot)/zippy.zip"
 
 			curl -s "$url" -o "$zipfile"
-			unzip "$zipfile" -d "$target"
+			unzip "$zipfile" -d "$two"
 			rm "$zipfile"
 			# </server to local>
 
 		fi
 	else
-		if [[ $3 == *:* ]]; then
+		if [[ $two == *:* ]]; then
 
 			# <local to server>
-			confname="$(sed 's/.*://g' <<< "$3")"
+			confname="$(sed 's/.*://g' <<< "$two")"
 			if [ -z "$4" ]; then
 				username="$(. $0 getProperty username)"
 			else
@@ -249,8 +250,8 @@ elif [ "$1" == "cpConf" ]; then
 			else
 				password="$5"
 			fi
-			url="$(. $0 getServerURL "$3")/index.php?cmd=setConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
-			localconfpath="$(. $0 getConfDir "$2")"
+			url="$(awk -F ':' '{print $1}' "$two")/index.php?cmd=setConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
+			localconfpath="$one"
 			zipfile="$(. $0 getUlRoot)/zippy.zip"
 
 			(cd "$localconfpath"; zip -r -q "$zipfile" ".")
@@ -264,10 +265,10 @@ elif [ "$1" == "cpConf" ]; then
 		else
 
 			# <local to local>
-			frompath="$(. $0 getConfDir $2)"
-			[ ! -d "$frompath" ] && error "conf $2 not found"
-			topath="$(. $0 getConfDir "$3")"
-			cp -r "$frompath" "$topath"
+			[ ! -d "$one" ] && error "conf $one not found"
+			[ -d "$two" ] && rm -r "$two"
+			mkdir "$two"
+			cp -r "$one"/* "$two"
 			# </local to local>
 
 		fi
@@ -277,18 +278,19 @@ elif [ "$1" == "addServer" ]; then
 	if [ -z "$3" ]; then
 		error "addServer missing argument 3"
 	fi
-	echo "$3" > "$(. $0 getServersDir)/$2"
+	echo "$3" > "$(. $0 getUlRoot)/servers/$2"
 
 elif [ "$1" == "deleteServer" ]; then
 	if [ -z "$2" ]; then
 		error "deleteServer missing argument 2"
 	fi
-	rm "$(. $0 getServersDir)/$2"
+	rm "$(. $0 getUlRoot)/servers/$2"
 
 elif [ "$1" == "listServers" ]; then
-	for file in $(ls "$(. $0 getServersDir)")
+	serversdir="$(. $0 getUlRoot)/servers"
+	for file in $(ls "$serversdir")
 	do
-		echo $file=$(cat $(. $0 getServersDir)/$file)
+		echo "$file=$(cat "$serversdir/$file")"
 	done
 
 elif [ "$1" == "login" ]; then
@@ -312,16 +314,12 @@ elif [ "$1" == "getUlRoot" ]; then
 	[ ! "$2" == "-q" ] && [ ! -d "$ulroot" ] && error "'$ulroot' directory not found"
 	echo "$ulroot"
 
-elif [ "$1" == "getPropertiesFile" ]; then
-	propsfile=$(. $0 getUlRoot)/properties
-	[ ! "$2" == "-q" ] && [ ! -f "$propsfile" ] && error "'$propsfile' not found"
-	echo "$propsfile"
-
 elif [ "$1" == "setProperty" ]; then
 	if [ -z "$3" ]; then
 		error 'setProperty missing argument 3'
 	fi
-	propsfile=$(. $0 getPropertiesFile)
+	propsfile="$(. $0 getUlRoot)/properties"
+	[ ! -f $propsfile ] && error "$propsfile not found"
 	sed "/$2=/d" -i "$propsfile"
 	echo "$2=$3" >> "$propsfile"
 
@@ -329,77 +327,26 @@ elif [ "$1" == "getProperty" ]; then
 	if [ -z "$2" ]; then
 		error 'getProperty missing argument 2'
 	fi
-	propsfile="$(. $0 getPropertiesFile)"
+	propsfile="$(. $0 getUlRoot)/properties"
+	[ ! -f $propsfile ] && error "$propsfile not found"
 	grep "$2=" "$propsfile" | sed "s/$2=//g"
 
 elif [ "$1" == "deleteProperty" ]; then
 	if [ -z "$2" ]; then
 		error 'deleteProperty missing argument 2'
 	fi
-	propsfile="$(. $0 getPropertiesFile)"
+	propsfile="$(. $0 getUlRoot)/properties"
+	[ ! -f $propsfile ] && error "$propsfile not found"
 	sed '/^'"$2"'=/d' -i "$propsfile"
 
 elif [ "$1" == "getProperties" ]; then
-	cat "$(. $0 getPropertiesFile)"
-
-elif [ "$1" == "getServersDir" ]; then
-	serversdir="$(. $0 getUlRoot)/servers"
-	[ ! "$2" == "-q" ] && [ ! -d "$serversdir" ] && error "'$serversdir' not found"
-	echo "$serversdir"
-
-elif [ "$1" == "getConfsDir" ]; then
-	confsdir="$(. $0 getUlRoot)/confs"
-	[ ! "$2" == "-q" ] && [ ! -d "$confsdir" ] && error "'$confsdir' not found"
-	echo "$confsdir"
-
-elif [ "$1" == "getConfDir" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfDir missing argument 2'
-	fi
-	confdir="$(. $0 getConfsDir)/$2"
-	[ ! "$3" == "-q" ] && [ ! -d "$confdir" ] && error "'$confdir' not found"
-	echo "$confdir"
-
-elif [ "$1" == "getLoadedConfPath" ]; then
-	echo $(. $0 getConfDir $(. $0 getProperty loadedConf))
-
-elif [ "$1" == "getConfOnLoad" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfOnLoad missing argument 2'
-	fi
-	path="$(. $0 getConfDir $2 "-q")/ulres/onload"
-	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
-	echo "$path"
-
-elif [ "$1" == "getConfOnUpdate" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfOnUpdate missing argument 2'
-	fi
-	path="$(. $0 getConfDir $2 "-q")/ulres/onupdate"
-	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
-	echo "$path"
-
-elif [ "$1" == "getConfOnCopy" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfOnCopy missing argument 2'
-	fi
-	path="$(. $0 getConfDir $2 "-q")/ulres/oncopy"
-	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
-	echo "$path"
-
-elif [ "$1" == "getConfOnPaste" ]; then
-	if [ -z "$2" ]; then
-		error 'getConfOnPaste missing argument 2'
-	fi
-	path="$(. $0 getConfDir $2 "-q")/ulres/onpaste"
-	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
-	echo "$path"
+	cat "$(. $0 getUlRoot)/properties"
 
 elif [ "$1" == "getServerURL" ]; then
 	if [ -z "$2" ]; then
 		error "getServerURL missing argument 2"
 	fi
-	if [[ "$(. $0 isServerConf "$2")" == true ]]; then
+	if [[ $(. $0 conftype "$2") == serverconf* ]]; then
 		set $2 "$(sed 's/:.*//g' <<< $2)"
 	fi
 
@@ -418,23 +365,51 @@ elif [ "$1" == "getServerURL" ]; then
 		echo $2
 	fi
 
-elif [ "$1" == "getServerConfURL" ]; then
+elif [ "$1" == "conftype" ]; then
 	if [ -z "$2" ]; then
-		error "getServerConfURL missing argument 2"
+		error "conftype missing argument 2"
 	fi
 
-	server="$(. $0 getServerURL "$(sed 's/:.*//g' <<< "$2")")"
-	confname="$(sed 's/.*://g' <<< "$2")"
-	echo "$server/confs/$confname"
-
-elif [ "$1" == "isServerConf" ]; then
-	if [ -z "$2" ]; then
-		error "isServerConf missing argument 2"
-	fi
 	if [[ $2 == *:* ]]; then
-		echo true
+		echo "serverconfname"
+	elif [[ $2 == */* ]]; then
+		if [[ $2 == *.*/confs/*.zip ]]; then
+			echo "serverconfpath"
+		else
+			echo "localconfpath"
+		fi
 	else
-		echo false
+		echo "localconfname"
+	fi
+
+elif [ "$1" == "resolveConf" ]; then # resolves @server notation / localconfname -> localconfpath / serverconfpath -> serverconfname
+	if [ -z "$2" ]; then
+		echo "{$*}"
+		error "resolveConf missing argument 2"
+	fi
+
+	t="$(. $0 conftype "$2")"
+	if [[ $t == localconfname ]]; then
+		echo "$(. $0 getUlRoot)/confs/$2"
+	elif [[ $t == serverconfpath ]]; then
+		echo "$(awk -F '/confs/' '{print $1}' <<< "$2"):$(awk -F '.zip' '{print $1}' <<< "$(awk -F '/confs/' '{print $2}' <<< "$2")")"
+	elif [[ $2 == @* ]]; then
+		left="$(awk -F ':' '{print $1}' <<< "$2")"
+		right="$(awk -F ':' '{print $2}' <<< "$2")"
+
+		servers="$(. $0 listServers)"
+		one="$(sed 's/@//g' <<< "$left")"
+		for server in $servers
+		do
+			two="$(sed 's/=.*//g' <<< "$server")"
+			if [ "$one" == "$two" ]; then
+				x=$(sed 's/.*=//g' <<< $server)
+				echo "$x:$right"
+				break
+			fi
+		done
+	else
+		echo "$2"
 	fi
 
 else
