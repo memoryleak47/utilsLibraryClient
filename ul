@@ -77,10 +77,6 @@ elif [ "$1" == "loadConf" ]; then
 	confpath="$ulroot/confs/$2"
 	[ ! -d "$confpath" ] && error "conf $confpath not found"
 
-	# inherit
-	. $0 clearInheritances "$2"
-	. $0 buildInheritances "$2"
-		
 	# onload
 	onloadpath="$confpath/ulres/onload"
 	if [ -f "$onloadpath" ]; then
@@ -88,15 +84,23 @@ elif [ "$1" == "loadConf" ]; then
 		"$onloadpath"
 	fi
 
+	. $0 updateConf "$2"
+
 	. $0 setProperty loadedConf "$2"
-	sympath="$ulroot/loadedConf"
+	sympath="$ulroot/confs/loaded"
 	if [ -d "$sympath" ]; then
 		rm "$sympath"
 	fi
 	ln -s "$ulroot/confs/$2" "$sympath"
 
 elif [ "$1" == "updateConf" ]; then
-	echo TODO updateConf
+	. $0 clearInheritances "$2"
+	. $0 buildInheritances "$2"
+	onupdatepath="$(. $0 getUlRoot)/confs/$2/ulres/onupdate"
+	if [ -f "$onupdatepath" ]; then
+		chmod +x "$onupdatepath"
+		"$onupdatepath"
+	fi
 
 elif [ "$1" == "createUser" ]; then # server, username, password
 	if [ -z "$4" ]; then
