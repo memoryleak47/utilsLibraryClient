@@ -86,7 +86,7 @@ elif [ "$1" == "loadConf" ]; then
 	ln -s "$conf" "$sympath"
 
 	# onload
-	onloadpath="$confpath/ulres/onload"
+	onloadpath="$conf/ulres/onload"
 	if [ -f "$onloadpath" ]; then
 		chmod +x "$onloadpath"
 		"$onloadpath"
