@@ -116,7 +116,7 @@ elif [ "$1" == "createUser" ]; then # server, username, password
 	server="$(. $0 getServerURL "$2")"; username="$3"; password="$4"
 	url="$server/index.php?cmd=createUser&username=$(urlencode "$username")&password=$(urlencode "$password")"
 	x="$(curl -s "$url")"
-	[[ "${#x}" -gt 2 ]] && error "$x"
+	[[ "${#x}" -gt 2 ]] && error "answer: $x"
 
 elif [ "$1" == "deleteUser" ]; then # server, username, password
 	if [ -z "$4" ]; then
@@ -125,7 +125,7 @@ elif [ "$1" == "deleteUser" ]; then # server, username, password
 	server="$(. $0 getServerURL "$2")"; username="$3"; password="$4"
 	url="$server/index.php?cmd=deleteUser&username=$(urlencode "$username")&password=$(urlencode "$password")"
 	x="$(curl -s "$url")"
-	[[ "${#x}" -gt 2 ]] && error "$x"
+	[[ "${#x}" -gt 2 ]] && error "answer: $x"
 
 elif [ "$1" == "createConf" ]; then
 	if [ -z "$2" ]; then
@@ -148,7 +148,7 @@ elif [ "$1" == "createConf" ]; then
 		confname="$(sed 's/.*://g' <<< "$2")"
 		url="$(. $0 getServerURL "$2")/index.php?cmd=createConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
 		x="$(curl -s "$url")"
-		[[ "${#x}" -gt 2 ]] && error "$x"
+		[[ "${#x}" -gt 2 ]] && error "answer: $x"
 		# </server create>
 
 	else
@@ -180,7 +180,7 @@ elif [ "$1" == "deleteConf" ]; then
 		confname="$(sed 's/.*://g' <<< "$conf")"
 		url="$(. $0 getServerURL "$conf")/index.php?cmd=deleteConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
 		x="$(curl -s "$url")"
-		[[ "${#x}" -gt 2 ]] && error "$x"
+		[[ "${#x}" -gt 2 ]] && error "answer: $x"
 		# </server delete>
 	else
 		# <client delete>
@@ -217,7 +217,26 @@ elif [ "$1" == "cpConf" ]; then
 		if [[ $two == *:* ]]; then
 
 			# <server to server>
-			error "TODO"
+			url="$(awk -F ':' '{print $1}' <<< "$one")/confs/$(awk -F ':' '{print $2}' <<< "$one").zip"
+			zipfile="$(. $0 getUlRoot)/zippy.zip"
+			curl -s "$url" -o "$zipfile"
+
+
+			if [ -z "$4" ]; then
+				username="$(. $0 getProperty username)"
+			else
+				username="$4"
+			fi
+			if [ -z "$5" ]; then
+				password="$(. $0 getProperty password)"
+			else
+				password="$5"
+			fi
+			url="$(awk -F ':' '{print $1}' <<< "$two")/index.php?cmd=setConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
+			x="$(curl -s --form zippy="@$zipfile" "$url")"
+			rm "$zipfile"
+			[[ ! $? == 0 ]] && error 'cpConf: curl failed'
+			[[ "${#x}" -gt 2 ]] && error "answer: $x"
 			# </server to server>
 
 		else
@@ -250,7 +269,7 @@ elif [ "$1" == "cpConf" ]; then
 			else
 				password="$5"
 			fi
-			url="$(awk -F ':' '{print $1}' "$two")/index.php?cmd=setConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
+			url="$(awk -F ':' '{print $1}' <<< "$two")/index.php?cmd=setConf&confname=$(urlencode "$confname")&username=$(urlencode "$username")&password=$(urlencode "$password")"
 			localconfpath="$one"
 			zipfile="$(. $0 getUlRoot)/zippy.zip"
 
@@ -259,7 +278,7 @@ elif [ "$1" == "cpConf" ]; then
 			x="$(curl -s --form zippy="@$zipfile" "$url")"
 			rm "$zipfile"
 			[[ ! $? == 0 ]] && error 'cpConf: curl failed'
-			[[ "${#x}" -gt 2 ]] && error "$x"
+			[[ "${#x}" -gt 2 ]] && error "answer: $x"
 			# </local to server>
 
 		else
