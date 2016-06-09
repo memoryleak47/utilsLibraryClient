@@ -27,17 +27,26 @@ function urlencode()
 if [[ -z "$1" ]] || [[ "$1" == "--help" ]]; then
 	echo -e "Usage=\tul --help
 \tul getUlRoot
+
 \tul getPropertiesFile
 \tul setProperty <property> <value>
 \tul getProperty <property>
 \tul deleteProperty <property>
 \tul getProperties
+
 \tul getServersDir
 \tul getConfsDir
 \tul getConfDir <conf>
 \tul getLoadedConfPath
+
 \tul loadConf <confpath>
-\tul getConfInit <conf>
+\tul updateConf <confpath>
+
+\tul getConfOnLoad <conf>
+\tul getConfOnUpdate <conf>
+\tul getConfOnCopy <conf>
+\tul getConfOnPaste <conf>
+
 \tul createUser <username> <password>
 \tul deleteUser <username> <password>
 \tul createConf <conf>
@@ -116,11 +125,29 @@ elif [ "$1" == "loadConf" ]; then
 	if [ -z "$2" ]; then
 		error 'loadConf missing argument 2'
 	fi
-	initpath="$(. $0 getConfInit "$2" "-q")"
-	if [ -f "$initpath" ]; then
-		chmod +x "$initpath"
-		"$initpath"
+
+	# inherit
+	inheritpath="$(. $0 getConfDir "$2")/ulres/inherit"
+	if [ -f "$inheritpath" ]; then
+		while read line;
+		do
+			srcconf="$(awk -F ',' '{print $1 }' <<< "$line")"
+			path="$(awk -F ',' '{print $2 }' <<< "$line")"
+			override="$(awk -F ',' '{print $3 }' <<< "$line")"
+			. $0 cpConf "$srcconf" "$2/$path"
+			if [ -n "$override" ]; then
+				mv "$(. "$0" getConfDir "$2")/ulres/inheritpaths/$override"/* "$(. "$0" getConfDir "$2")/$path"
+			fi
+		done < "$inheritpath"
 	fi
+		
+	# onload
+	onloadpath="$(. $0 getConfOnLoad "$2" "-q")"
+	if [ -f "$onloadpath" ]; then
+		chmod +x "$onloadpath"
+		"$onloadpath"
+	fi
+
 	. $0 setProperty loadedConf "$2"
 	sympath="$(. $0 getUlRoot)/loadedConf"
 	if [ -d "$sympath" ]; then
@@ -128,13 +155,41 @@ elif [ "$1" == "loadConf" ]; then
 	fi
 	ln -s "$(. $0 getLoadedConfPath)" "$sympath"
 
-elif [ "$1" == "getConfInit" ]; then
+elif [ "$1" == "updateConf" ]; then
+	# TODO
+	echo TODO updateConf
+
+elif [ "$1" == "getConfOnLoad" ]; then
 	if [ -z "$2" ]; then
-		error 'getConfInit missing argument 2'
+		error 'getConfOnLoad missing argument 2'
 	fi
-	initpath="$(. $0 getConfDir $2 "-q")/init"
-	[ ! "$3" == "-q" ] && [ ! -f "$initpath" ] && error "'$initpath' not found"
-	echo "$initpath"
+	path="$(. $0 getConfDir $2 "-q")/ulres/onload"
+	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
+	echo "$path"
+
+elif [ "$1" == "getConfOnUpdate" ]; then
+	if [ -z "$2" ]; then
+		error 'getConfOnUpdate missing argument 2'
+	fi
+	path="$(. $0 getConfDir $2 "-q")/ulres/onupdate"
+	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
+	echo "$path"
+
+elif [ "$1" == "getConfOnCopy" ]; then
+	if [ -z "$2" ]; then
+		error 'getConfOnCopy missing argument 2'
+	fi
+	path="$(. $0 getConfDir $2 "-q")/ulres/oncopy"
+	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
+	echo "$path"
+
+elif [ "$1" == "getConfOnPaste" ]; then
+	if [ -z "$2" ]; then
+		error 'getConfOnPaste missing argument 2'
+	fi
+	path="$(. $0 getConfDir $2 "-q")/ulres/onpaste"
+	[ ! "$3" == "-q" ] && [ ! -f "$path" ] && error "'$path' not found"
+	echo "$path"
 
 elif [ "$1" == "createUser" ]; then # server, username, password
 	if [ -z "$4" ]; then
