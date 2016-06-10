@@ -32,6 +32,34 @@ if [ ! -d "$ulroot/servers" ]; then
 	mkdir "$ulroot/servers"
 fi
 
+# create local
+if [ ! -d "$ulroot/local" ]; then
+	mkdir "$ulroot/local"
+fi
+
+# kerneldeep?
+echo "Do you want to allow utilsLibrary to substitute your .bashrc-file? (yes/no) (It will be saved in $whereToInstall/local/bashrc)"
+read kerneldeep
+if [ "$kerneldeep" == "yes" ]; then
+	cp "$HOME/.bashrc" "$ulroot/local/bashrc"
+	tee $HOME/.bashrc << 'EOF' > /dev/null
+#!/bin/bash
+
+# If you search your old .bashrc-file: It should be in <ulroot>/local/bashrc
+x="(ul getUlRoot)/local/bashrc"
+if [ -f "$x" ]; then
+	. "$x"
+fi
+y="(ul getUlRoot)/confs/loaded/bashrc"
+if [ -f "$y" ]; then
+	. "$y"
+fi
+EOF
+else
+	kerneldeep="no"
+fi
+ul setProperty kerneldeep "$kerneldeep"
+
 # create confs/default
 ul createDefaultConf
 
