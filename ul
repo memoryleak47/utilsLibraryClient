@@ -455,23 +455,24 @@ function buildInheritances()
 		error "buildInheritances missing argument 2"
 	fi
 
-	confpath="$(resolveConf "$1")"
-	inheritpath="$confpath/ulres/inherit"
+	local confpath="$(resolveConf "$1")"
+	local inheritpath="$confpath/ulres/inherit"
 	if [ -f "$inheritpath" ]; then
-		while read line;
+		while read theline;
 		do
-			confpath="$(resolveConf "$1")" # needed !
-			from="$(awk -F ',' '{print $1 }' <<< "$line")"
-			to="$(awk -F ',' '{print $2 }' <<< "$line")"
-			override="$(awk -F ',' '{print $3 }' <<< "$line")"
+			local line="$theline"
+			local confpath="$(resolveConf "$1")" # needed !
+			local from="$(awk -F ',' '{print $1 }' <<< "$line")"
+			local to="$(awk -F ',' '{print $2 }' <<< "$line")"
+			echo "copying from $from to $confpath/$to"
 			cpConf "$from" "$confpath/$to"
+			echo "bulding $confpath/$to"
 			buildInheritances "$confpath/$to"
-			if [ -n "$override" ]; then
-				newfrom="$confpath/ulres/inheritpaths/$override"
-				[ ! -d "$newfrom" ] && error "$newfrom not found"
-				mv "$newfrom"/* "$confpath/$to"
-			fi
 		done < "$inheritpath"
+		if [ -d "$confpath/override" ]; then
+			echo "overriding $confpath/override/* to $confpath"
+			cp -r "$confpath/override"/* "$confpath"
+		fi
 	fi
 }
 
