@@ -356,7 +356,6 @@ elif [ "$1" == "deleteProperty" ]; then
 	propsfile="$(. $0 getUlRoot)/properties"
 	[ ! -f $propsfile ] && error "$propsfile not found"
 	a="$(sed 's/\\/\\\\/g' <<< "$(sed 's/=/\\=/g' <<< "$(sed 's/\\/\\\\/g' <<< "$2")")")"
-	echo '/^'"$a"'=/d'
 	sed '/^'"$a"'=/d' -i "$propsfile"
 
 elif [ "$1" == "getProperties" ]; then
