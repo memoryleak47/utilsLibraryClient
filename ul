@@ -469,9 +469,9 @@ function buildInheritances()
 			echo "bulding $confpath/$to"
 			buildInheritances "$confpath/$to"
 		done < "$inheritpath"
-		if [ -d "$confpath/override" ]; then
-			echo "overriding $confpath/override/* to $confpath"
-			cp -r "$confpath/override"/* "$confpath"
+		if [ -d "$confpath/ulres/override" ]; then
+			echo "overriding $confpath/ulres/override/* to $confpath"
+			cp -r "$confpath/ulres/override"/* "$confpath"
 		fi
 	fi
 }
