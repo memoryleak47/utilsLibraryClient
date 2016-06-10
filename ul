@@ -334,9 +334,11 @@ elif [ "$1" == "setProperty" ]; then
 		error 'setProperty missing argument 3'
 	fi
 	propsfile="$(. $0 getUlRoot)/properties"
+	a="$(sed 's/=/\\=/g' <<< "$(sed 's/\\/\\\\/g' <<< "$2")")"
+	b="$(sed 's/=/\\=/g' <<< "$(sed 's/\\/\\\\/g' <<< "$3")")"
 	[ ! -f $propsfile ] && error "$propsfile not found"
-	sed "/$2=/d" -i "$propsfile"
-	echo "$2=$3" >> "$propsfile"
+	sed "/$a=/d" -i "$propsfile"
+	echo "$a=$b" >> "$propsfile"
 
 elif [ "$1" == "getProperty" ]; then
 	if [ -z "$2" ]; then
