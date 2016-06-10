@@ -46,13 +46,9 @@ if [ "$kerneldeep" == "yes" ]; then
 #!/bin/bash
 
 # If you search your old .bashrc-file: It should be in <ulroot>/local/bashrc
-x="(ul getUlRoot)/local/bashrc"
-if [ -f "$x" ]; then
-	. "$x"
-fi
-y="(ul getUlRoot)/confs/loaded/bashrc"
-if [ -f "$y" ]; then
-	. "$y"
+path="(ul getUlRoot)/confs/loaded/bashrc"
+if [ -f "$path" ]; then
+	. "$path"
 fi
 EOF
 else
