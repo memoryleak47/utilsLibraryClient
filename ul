@@ -346,7 +346,8 @@ elif [ "$1" == "getProperty" ]; then
 	fi
 	propsfile="$(. $0 getUlRoot)/properties"
 	[ ! -f $propsfile ] && error "$propsfile not found"
-	grep "$2=" "$propsfile" | sed "s/$2=//g"
+	a="$(sed 's/\\/\\\\/g' <<< "$(sed 's/=/\\=/g' <<< "$(sed 's/\\/\\\\/g' <<< "$2")")")"
+	grep '^'"$a"'=' "$propsfile" | sed 's/^'"$a"'=//g' | sed 's/\\=/=/g' | sed 's/\\\\/\\/g'
 
 elif [ "$1" == "deleteProperty" ]; then
 	if [ -z "$2" ]; then
@@ -354,7 +355,9 @@ elif [ "$1" == "deleteProperty" ]; then
 	fi
 	propsfile="$(. $0 getUlRoot)/properties"
 	[ ! -f $propsfile ] && error "$propsfile not found"
-	sed '/^'"$2"'=/d' -i "$propsfile"
+	a="$(sed 's/\\/\\\\/g' <<< "$(sed 's/=/\\=/g' <<< "$(sed 's/\\/\\\\/g' <<< "$2")")")"
+	echo '/^'"$a"'=/d'
+	sed '/^'"$a"'=/d' -i "$propsfile"
 
 elif [ "$1" == "getProperties" ]; then
 	cat "$(. $0 getUlRoot)/properties"
