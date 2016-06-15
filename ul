@@ -228,7 +228,7 @@ function cpConf()
 
 			# <server to local>
 			deleteConf "$two" "-q"
-			createConf "$two"
+			mkdir "$two"
 
 			url="$(awk -F ':' '{print $1}' <<< "$one")/confs/$(awk -F ':' '{print $2}' <<< "$one").zip"
 			zipfile="$(getUlRoot)/zippy.zip"
