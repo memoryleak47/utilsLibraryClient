@@ -42,7 +42,7 @@ function urlencode()
 function loadConf()
 {
 	if [ -z "$1" ]; then
-		error 'loadConf missing argument 2'
+		error 'loadConf missing argument 1'
 	fi
 	conf="$(resolveConf "$1")"
 	ulroot="$(getUlRoot)"
@@ -79,7 +79,7 @@ function updateConf()
 function createUser() # server, username,()
 {
 	if [ -z "$3" ]; then
-		error 'createUser missing argument 4'
+		error 'createUser missing argument 3'
 	fi
 	server="$(getServerURL "$1")"; username="$2"; password="$3"
 	url="$server/index.php?cmd=createUser&username=$(urlencode "$username")&password=$(urlencode "$password")"
@@ -90,7 +90,7 @@ function createUser() # server, username,()
 function deleteUser() # server, username, password
 {
 	if [ -z "$3" ]; then
-		error 'deleteUser missing argument 4'
+		error 'deleteUser missing argument 3'
 	fi
 	server="$(getServerURL "$1")"; username="$2"; password="$3"
 	url="$server/index.php?cmd=deleteUser&username=$(urlencode "$username")&password=$(urlencode "$password")"
@@ -101,7 +101,7 @@ function deleteUser() # server, username, password
 function createConf()
 {
 	if [ -z "$1" ]; then
-		error 'createConf missing argument 2'
+		error 'createConf missing argument 1'
 	fi
 	conf="$(resolveConf "$1")"
 	if [[ $(conftype "$conf") == serverconf* ]]; then
@@ -128,6 +128,7 @@ function createConf()
 		# <client create>
 		if [ ! -d "$conf" ]; then
 			mkdir "$conf"
+			(cd "$conf"; git init)
 		fi
 		# </client create>
 	fi
@@ -136,7 +137,7 @@ function createConf()
 function deleteConf()
 {
 	if [ -z "$1" ]; then
-		error 'deleteConf missing argument 2'
+		error 'deleteConf missing argument 1'
 	fi
 	conf="$(resolveConf "$1")"
 	if [[ $(conftype "$conf") == serverconf* ]]; then
@@ -185,7 +186,7 @@ function listLocalConfs()
 function cpConf()
 {
 	if [ -z "$2" ]; then
-		error 'cpConf missing argument 3'
+		error 'cpConf missing argument 2'
 	fi
 
 	ulroot="$(getUlRoot)"
@@ -281,7 +282,7 @@ function cpConf()
 function addServer()
 {
 	if [ -z "$2" ]; then
-		error "addServer missing argument 3"
+		error "addServer missing argument 2"
 	fi
 	echo "$2" > "$(getUlRoot)/servers/$1"
 }
@@ -289,7 +290,7 @@ function addServer()
 function deleteServer()
 {
 	if [ -z "$1" ]; then
-		error "deleteServer missing argument 2"
+		error "deleteServer missing argument 1"
 	fi
 	rm "$(getUlRoot)/servers/$1"
 }
@@ -306,7 +307,7 @@ function listServers()
 function login()
 {
 	if [ -z "$2" ]; then
-		error "login missing argument 3"
+		error "login missing argument 2"
 	fi
 	setProperty username "$1"
 	setProperty password "$2"
@@ -316,6 +317,56 @@ function logout()
 {
 	deleteProperty username
 	deleteProperty password
+}
+
+function confGit()
+{
+	conf="$(resolveConf "$1")"
+	shift
+	(cd "$conf"; git $*)
+}
+
+function inherit()
+{
+	if [ -z "$3" ]; then
+		error "inherit missing argument 3"
+	fi
+	conf="$(resolveConf "$1")"
+	file="$conf/ulres/inherit"
+	from="$(resolveConf "$2")"
+	to="$3"
+
+	[ ! -d "$conf/ulres" ] && mkdir "$conf/ulres"
+	echo "$from,$3" >> "$file"
+}
+
+function uninherit()
+{
+	if [ -z "$3" ]; then
+		error "inherit missing argument 3"
+	fi
+	conf="$(resolveConf "$1")"
+	file="$conf/ulres/inherit"
+	from="$(resolveConf "$2")"
+	to="$3"
+
+	[ ! -d "$conf/ulres" ] && mkdir "$conf/ulres"
+	[ ! -f "$file" ] && touch "$file"
+	sed '/'"$from,$3"'/d' -i "$file"
+}
+
+function listInheritances()
+{
+	if [ -z "$1" ]; then
+		error "listInheritances missing argument 1"
+	fi
+	conf="$(resolveConf "$1")"
+	[[ $(conftype "$conf") == server* ]] && error 'listInheritances only works for local confs'
+	file="$conf/ulres/inherit"
+
+	[ ! -d "$conf/ulres" ] && mkdir "$conf/ulres"
+	[ ! -f "$file" ] && touch "$file"
+	cat "$file"
 }
 
 #
@@ -418,7 +469,7 @@ function conftype()
 function resolveConf() # resolves @server notation / localconfname -> localconfpath / serverconfpath -> serverconfname
 {
 	if [ -z "$1" ]; then
-		error "resolveConf missing argument 2"
+		error "resolveConf missing argument 1"
 	fi
 
 	t="$(conftype "$1")"
@@ -525,6 +576,14 @@ elif [ "$1" == "login" ]; then
 	login "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
 elif [ "$1" == "logout" ]; then
 	logout "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+elif [ "$1" == "confGit" ]; then
+	confGit "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+elif [ "$1" == "inherit" ]; then
+	inherit "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+elif [ "$1" == "uninherit" ]; then
+	uninherit "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+elif [ "$1" == "listInheritances" ]; then
+	listInheritances "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
 elif [ "$1" == "getUlRoot" ]; then
 	getUlRoot "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
 elif [ "$1" == "setProperty" ]; then
@@ -549,8 +608,8 @@ else
        	echo -e "Usage:\tul --help
 \tul loadConf <localconf>
 \tul updateConf <localconf>
-\tul createUser <username> <password>
-\tul deleteUser <username> <password>
+\tul createUser <server> <username> <password>
+\tul deleteUser <server> <username> <password>
 \tul createConf <conf>
 \tul deleteConf <conf>
 \tul createDefaultConf
@@ -561,6 +620,10 @@ else
 \tul listServers
 \tul login <username> <password>
 \tul logout
+\tul confGit [<conf>] <cmds>
+\tul inherit <conf> <from> <to>
+\tul uninherit <conf> <from> <to>
+\tul listInheritances <localconf>
 
 \tul getUlRoot
 \tul setProperty <property> <value>
