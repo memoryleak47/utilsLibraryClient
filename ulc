@@ -605,34 +605,34 @@ elif [ "$1" == "buildInheritances" ]; then
 elif [ "$1" == "clearInheritances" ]; then
 	clearInheritances "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
 else
-       	echo -e "Usage:\tul --help
-\tul loadConf <localconf>
-\tul updateConf <localconf>
-\tul createUser <server> <username> <password>
-\tul deleteUser <server> <username> <password>
-\tul createConf <conf>
-\tul deleteConf <conf>
-\tul createDefaultConf
-\tul listLocalConfs
-\tul cpConf <conf> <conf>
-\tul addServer <servername> <URL>
-\tul deleteServer <servername>
-\tul listServers
-\tul login <username> <password>
-\tul logout
-\tul confGit [<conf>] <cmds>
-\tul inherit <conf> <from> <to>
-\tul uninherit <conf> <from> <to>
-\tul listInheritances <localconf>
+       	echo -e "Usage:\tulc --help
+\tulc loadConf <localconf>
+\tulc updateConf <localconf>
+\tulc createUser <server> <username> <password>
+\tulc deleteUser <server> <username> <password>
+\tulc createConf <conf>
+\tulc deleteConf <conf>
+\tulc createDefaultConf
+\tulc listLocalConfs
+\tulc cpConf <conf> <conf>
+\tulc addServer <servername> <URL>
+\tulc deleteServer <servername>
+\tulc listServers
+\tulc login <username> <password>
+\tulc logout
+\tulc confGit [<conf>] <cmds>
+\tulc inherit <conf> <from> <to>
+\tulc uninherit <conf> <from> <to>
+\tulc listInheritances <localconf>
 
-\tul getUlRoot
-\tul setProperty <property> <value>
-\tul getProperty <property>
-\tul deleteProperty <property>
-\tul getProperties
-\tul getServerURL <server>
-\tul conftype <conf>
-\tul resolveConf <conf>
-\tul buildInheritances <localconf>
-\tul clearInheritances <localconf>"
+\tulc getUlRoot
+\tulc setProperty <property> <value>
+\tulc getProperty <property>
+\tulc deleteProperty <property>
+\tulc getProperties
+\tulc getServerURL <server>
+\tulc conftype <conf>
+\tulc resolveConf <conf>
+\tulc buildInheritances <localconf>
+\tulc clearInheritances <localconf>"
 fi

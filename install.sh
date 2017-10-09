@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[ $(eval sudo cp $(dirname $(readlink -f $0))/ul /usr/bin/) ] && exit 1
+[ $(eval sudo cp $(dirname $(readlink -f $0))/ulc /usr/bin/) ] && exit 1
 
 # whereToInstall?
 echo "Where do you want to install the ulClient? Default: ~/.ul"
@@ -11,7 +11,7 @@ fi
 eval "echo $whereToInstall > $HOME/.ulroot"
 
 # create UlRoot
-ulroot="$(ul getUlRoot -q)"
+ulroot="$(ulc getUlRoot -q)"
 if [ ! -d "$ulroot" ]; then
 	mkdir "$ulroot"
 fi
@@ -46,7 +46,7 @@ if [ "$kerneldeep" == "yes" ]; then
 #!/bin/bash
 
 # If you search your old .bashrc-file: It should be in <ulroot>/local/bashrc
-path="$(ul getUlRoot)/confs/loaded/ulres/bashrc"
+path="$(ulc getUlRoot)/confs/loaded/ulres/bashrc"
 if [ -f "$path" ]; then
 	. "$path"
 fi
@@ -54,10 +54,10 @@ EOF
 else
 	kerneldeep="no"
 fi
-ul setProperty kerneldeep "$kerneldeep"
+ulc setProperty kerneldeep "$kerneldeep"
 
 # create confs/default
-ul createDefaultConf
+ulc createDefaultConf
 
 # load confs/default
-ul loadConf default
+ulc loadConf default
